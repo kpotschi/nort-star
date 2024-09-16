@@ -18300,6 +18300,76 @@ function testPoint(point, index, localThresholdSq, matrixWorld, raycaster, inter
     });
   }
 }
+var SphereGeometry = class _SphereGeometry extends BufferGeometry {
+  constructor(radius = 1, widthSegments = 32, heightSegments = 16, phiStart = 0, phiLength = Math.PI * 2, thetaStart = 0, thetaLength = Math.PI) {
+    super();
+    this.type = "SphereGeometry";
+    this.parameters = {
+      radius,
+      widthSegments,
+      heightSegments,
+      phiStart,
+      phiLength,
+      thetaStart,
+      thetaLength
+    };
+    widthSegments = Math.max(3, Math.floor(widthSegments));
+    heightSegments = Math.max(2, Math.floor(heightSegments));
+    const thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
+    let index = 0;
+    const grid = [];
+    const vertex2 = new Vector3();
+    const normal = new Vector3();
+    const indices = [];
+    const vertices = [];
+    const normals = [];
+    const uvs = [];
+    for (let iy = 0; iy <= heightSegments; iy++) {
+      const verticesRow = [];
+      const v = iy / heightSegments;
+      let uOffset = 0;
+      if (iy === 0 && thetaStart === 0) {
+        uOffset = 0.5 / widthSegments;
+      } else if (iy === heightSegments && thetaEnd === Math.PI) {
+        uOffset = -0.5 / widthSegments;
+      }
+      for (let ix = 0; ix <= widthSegments; ix++) {
+        const u = ix / widthSegments;
+        vertex2.x = -radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+        vertex2.y = radius * Math.cos(thetaStart + v * thetaLength);
+        vertex2.z = radius * Math.sin(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+        vertices.push(vertex2.x, vertex2.y, vertex2.z);
+        normal.copy(vertex2).normalize();
+        normals.push(normal.x, normal.y, normal.z);
+        uvs.push(u + uOffset, 1 - v);
+        verticesRow.push(index++);
+      }
+      grid.push(verticesRow);
+    }
+    for (let iy = 0; iy < heightSegments; iy++) {
+      for (let ix = 0; ix < widthSegments; ix++) {
+        const a = grid[iy][ix + 1];
+        const b = grid[iy][ix];
+        const c = grid[iy + 1][ix];
+        const d = grid[iy + 1][ix + 1];
+        if (iy !== 0 || thetaStart > 0) indices.push(a, b, d);
+        if (iy !== heightSegments - 1 || thetaEnd < Math.PI) indices.push(b, c, d);
+      }
+    }
+    this.setIndex(indices);
+    this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+    this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+    this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+  }
+  copy(source) {
+    super.copy(source);
+    this.parameters = Object.assign({}, source.parameters);
+    return this;
+  }
+  static fromJSON(data) {
+    return new _SphereGeometry(data.radius, data.widthSegments, data.heightSegments, data.phiStart, data.phiLength, data.thetaStart, data.thetaLength);
+  }
+};
 var RawShaderMaterial = class extends ShaderMaterial {
   constructor(parameters) {
     super(parameters);
@@ -18307,14 +18377,15 @@ var RawShaderMaterial = class extends ShaderMaterial {
     this.type = "RawShaderMaterial";
   }
 };
-var MeshPhongMaterial = class extends Material {
+var MeshStandardMaterial = class extends Material {
   constructor(parameters) {
     super();
-    this.isMeshPhongMaterial = true;
-    this.type = "MeshPhongMaterial";
+    this.isMeshStandardMaterial = true;
+    this.defines = { "STANDARD": "" };
+    this.type = "MeshStandardMaterial";
     this.color = new Color(16777215);
-    this.specular = new Color(1118481);
-    this.shininess = 30;
+    this.roughness = 1;
+    this.metalness = 0;
     this.map = null;
     this.lightMap = null;
     this.lightMapIntensity = 1;
@@ -18331,13 +18402,12 @@ var MeshPhongMaterial = class extends Material {
     this.displacementMap = null;
     this.displacementScale = 1;
     this.displacementBias = 0;
-    this.specularMap = null;
+    this.roughnessMap = null;
+    this.metalnessMap = null;
     this.alphaMap = null;
     this.envMap = null;
     this.envMapRotation = new Euler();
-    this.combine = MultiplyOperation;
-    this.reflectivity = 1;
-    this.refractionRatio = 0.98;
+    this.envMapIntensity = 1;
     this.wireframe = false;
     this.wireframeLinewidth = 1;
     this.wireframeLinecap = "round";
@@ -18348,9 +18418,10 @@ var MeshPhongMaterial = class extends Material {
   }
   copy(source) {
     super.copy(source);
+    this.defines = { "STANDARD": "" };
     this.color.copy(source.color);
-    this.specular.copy(source.specular);
-    this.shininess = source.shininess;
+    this.roughness = source.roughness;
+    this.metalness = source.metalness;
     this.map = source.map;
     this.lightMap = source.lightMap;
     this.lightMapIntensity = source.lightMapIntensity;
@@ -18367,13 +18438,12 @@ var MeshPhongMaterial = class extends Material {
     this.displacementMap = source.displacementMap;
     this.displacementScale = source.displacementScale;
     this.displacementBias = source.displacementBias;
-    this.specularMap = source.specularMap;
+    this.roughnessMap = source.roughnessMap;
+    this.metalnessMap = source.metalnessMap;
     this.alphaMap = source.alphaMap;
     this.envMap = source.envMap;
     this.envMapRotation.copy(source.envMapRotation);
-    this.combine = source.combine;
-    this.reflectivity = source.reflectivity;
-    this.refractionRatio = source.refractionRatio;
+    this.envMapIntensity = source.envMapIntensity;
     this.wireframe = source.wireframe;
     this.wireframeLinewidth = source.wireframeLinewidth;
     this.wireframeLinecap = source.wireframeLinecap;
@@ -19664,6 +19734,31 @@ var Spherical = class {
     return new this.constructor().copy(this);
   }
 };
+var PointLightHelper = class extends Mesh {
+  constructor(light, sphereSize, color) {
+    const geometry = new SphereGeometry(sphereSize, 4, 2);
+    const material = new MeshBasicMaterial({ wireframe: true, fog: false, toneMapped: false });
+    super(geometry, material);
+    this.light = light;
+    this.color = color;
+    this.type = "PointLightHelper";
+    this.matrix = this.light.matrixWorld;
+    this.matrixAutoUpdate = false;
+    this.update();
+  }
+  dispose() {
+    this.geometry.dispose();
+    this.material.dispose();
+  }
+  update() {
+    this.light.updateWorldMatrix(true, false);
+    if (this.color !== void 0) {
+      this.material.color.set(this.color);
+    } else {
+      this.material.color.copy(this.light.color);
+    }
+  }
+};
 var Controls = class extends EventDispatcher {
   constructor(object, domElement) {
     super();
@@ -19735,10 +19830,93 @@ var BackgroundStars = class {
   }
 };
 
+// src/entities/Spaceship.ts
+var Spaceship = class _Spaceship extends Mesh {
+  scene;
+  constructor(scene) {
+    const material = _Spaceship.getMaterial();
+    const geometry = _Spaceship.getGeometry();
+    super(geometry, material);
+    this.scene = scene;
+    this.init();
+  }
+  init() {
+    this.scene.add(this);
+  }
+  static getMaterial() {
+    return new MeshStandardMaterial({
+      color: 65280,
+      // wireframe: true,
+      side: DoubleSide
+      // Render both sides of the faces
+    });
+  }
+  static getGeometry() {
+    const geometry = new BufferGeometry();
+    const vertices = new Float32Array([
+      0,
+      0,
+      2,
+      // tip front
+      -1,
+      0,
+      0,
+      // left
+      1,
+      0,
+      0,
+      // right
+      0,
+      -0.5,
+      0,
+      // bottom
+      0,
+      0.5,
+      0,
+      // top
+      0,
+      0,
+      -1
+      // tip back
+    ]);
+    const indices = [
+      0,
+      1,
+      3,
+      0,
+      2,
+      3,
+      0,
+      1,
+      4,
+      0,
+      2,
+      4,
+      5,
+      1,
+      3,
+      5,
+      2,
+      3,
+      5,
+      1,
+      4,
+      5,
+      2,
+      4
+    ];
+    geometry.setAttribute("position", new BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    return geometry;
+  }
+};
+
 // src/scenes/GameScene.ts
 var GameScene = class extends Scene {
   backgroundStars;
   app;
+  spaceship;
+  pointLight;
   constructor(app) {
     super();
     this.app = app;
@@ -19747,16 +19925,17 @@ var GameScene = class extends Scene {
   init() {
     this.createBackground();
     this.createLighting();
-    const geometry = new BoxGeometry(1, 1, 1);
-    const material = new MeshPhongMaterial({ color: 65280 });
-    const cube = new Mesh(geometry, material);
-    this.add(cube);
+    this.spaceship = new Spaceship(this);
   }
   createLighting() {
     this.add(new AmbientLight(13421772));
-    const pointLight = new PointLight(16777215, 80);
-    pointLight.position.set(2, 2, 2);
-    this.add(pointLight);
+    this.pointLight = new PointLight(16777215, 50);
+    this.pointLight.position.set(10, 10, 0);
+    this.pointLight.castShadow = true;
+    const helper = new PointLightHelper(this.pointLight);
+    this.add(this.pointLight);
+    this.add(helper);
+    this.pointLight.lookAt(0, 0, 0);
   }
   createBackground() {
     this.backgroundStars = new BackgroundStars(this);
@@ -21371,9 +21550,9 @@ var CustomRenderer = class extends WebGLRenderer {
       0.4,
       0.85
     );
-    bloomPass.threshold = 1;
-    bloomPass.strength = 0.3;
-    bloomPass.radius = 1;
+    bloomPass.threshold = 0;
+    bloomPass.strength = 0.4;
+    bloomPass.radius = 0.3;
     const outputPass = new OutputPass();
     this.composer = new EffectComposer(this);
     this.composer.addPass(renderScene);
@@ -21405,11 +21584,11 @@ var App = class {
   init() {
     this.renderer = new CustomRenderer(this);
     this.setupCamera();
-    this.startScene();
     this.setupAnimationLoop();
     this.setupResizeListener();
     this.renderer.setupRenderPasses();
     this.setupDebugger();
+    this.startScene();
   }
   setupCamera() {
     this.camera = new PerspectiveCamera(
@@ -21427,7 +21606,6 @@ var App = class {
     const delta = this.clock.getDelta();
     if (this.currentScene) this.currentScene.loop(delta);
     this.renderer.render(this.currentScene, this.camera);
-    this.renderer.renderComposer();
   }
   startScene() {
     this.currentScene = new GameScene(this);

@@ -26,11 +26,11 @@ export default class App {
 		this.renderer = new CustomRenderer(this);
 
 		this.setupCamera();
-		this.startScene();
 		this.setupAnimationLoop();
 		this.setupResizeListener();
 		this.renderer.setupRenderPasses();
 		this.setupDebugger();
+		this.startScene();
 	}
 
 	private setupCamera() {
@@ -52,7 +52,7 @@ export default class App {
 		if (this.currentScene) this.currentScene.loop(delta);
 
 		this.renderer.render(this.currentScene, this.camera);
-		this.renderer.renderComposer();
+		// this.renderer.renderComposer();
 	}
 
 	private startScene() {

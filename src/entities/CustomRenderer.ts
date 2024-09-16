@@ -34,9 +34,9 @@ export default class CustomRenderer extends THREE.WebGLRenderer {
 			0.4,
 			0.85
 		);
-		bloomPass.threshold = 1;
-		bloomPass.strength = 0.3;
-		bloomPass.radius = 1;
+		bloomPass.threshold = 0;
+		bloomPass.strength = 0.4;
+		bloomPass.radius = 0.3;
 
 		const outputPass = new OutputPass();
 
