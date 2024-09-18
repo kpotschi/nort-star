@@ -3,12 +3,13 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { default as App } from '../app';
+import App from '../app';
+import { CONFIG } from '../config/config';
 
 export default class CustomRenderer extends THREE.WebGLRenderer {
 	private app: App;
-	private composer: EffectComposer;
-
+	public composer: EffectComposer;
+	public bloomPass: UnrealBloomPass;
 	constructor(app: App) {
 		super();
 		this.app = app;
@@ -28,25 +29,21 @@ export default class CustomRenderer extends THREE.WebGLRenderer {
 	public setupRenderPasses() {
 		const renderScene = new RenderPass(this.app.currentScene, this.app.camera);
 
-		const bloomPass = new UnrealBloomPass(
+		this.bloomPass = new UnrealBloomPass(
 			new THREE.Vector2(window.innerWidth, window.innerHeight),
 			1.5,
 			0.4,
 			0.85
 		);
-		bloomPass.threshold = 0;
-		bloomPass.strength = 0.4;
-		bloomPass.radius = 0.3;
+		this.bloomPass.threshold = CONFIG.RENDER.PASS.THRESHOLD;
+		this.bloomPass.strength = CONFIG.RENDER.PASS.STRENGTH;
+		this.bloomPass.radius = CONFIG.RENDER.PASS.RADIUS;
 
 		const outputPass = new OutputPass();
 
 		this.composer = new EffectComposer(this);
 		this.composer.addPass(renderScene);
-		this.composer.addPass(bloomPass);
+		this.composer.addPass(this.bloomPass);
 		this.composer.addPass(outputPass);
-	}
-
-	public renderComposer() {
-		this.composer.render();
 	}
 }

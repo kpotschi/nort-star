@@ -1,0 +1,19 @@
+export const CONFIG = {
+	GAMEPLAY: {},
+	RENDER: {
+		PASS: {
+			THRESHOLD: 0,
+			STRENGTH: 1,
+			RADIUS: 0,
+			EXPOSURE: 1,
+		},
+	},
+	CONTROLS: {
+		ROTATION_SPEED: 0.01,
+		MAX_ROTATION: Math.PI / 4,
+		ROTATION_RETURN_SPEED: 0.01,
+	},
+	BACKGROUND: {
+		MOVEMENT_SPEED: 1,
+	},
+};
