@@ -22268,20 +22268,47 @@ var Spaceship = class _Spaceship extends Mesh {
   }
 };
 
+// src/entities/obstacles/Obstacle.ts
+var Obstacle = class extends Mesh {
+  scene;
+  constructor(scene, geometry, material) {
+    super(geometry, material);
+    this.scene = scene;
+    scene.add(this);
+  }
+  move() {
+    this.rotateAroundShip();
+  }
+  resetPosition() {
+    if (this.position.z < 0) this.position.set(0, 0, 20);
+  }
+  rotateAroundShip() {
+    const currentAngle = Math.atan2(this.position.x, this.position.z);
+    const rotationSpeed = this.scene.spaceship.velocityY * 0.01;
+    const newAngle = currentAngle - rotationSpeed;
+    const distanceFromShip = this.position.distanceTo(
+      new Vector3(0, 0, 0)
+    );
+    const newX = distanceFromShip * Math.sin(newAngle);
+    const newZ = distanceFromShip * Math.cos(newAngle);
+    this.position.set(newX, this.position.y, newZ);
+  }
+};
+
 // src/entities/obstacles/Ring.ts
-var Ring = class extends Mesh {
-  constructor(scene) {
+var Ring = class extends Obstacle {
+  constructor(scene, index) {
     const geometry = new RingGeometry(4, 5, 8, 1, 0, Math.PI * 2);
     const material = new MeshStandardMaterial({
       color: 16776960,
       side: DoubleSide
     });
-    super(geometry, material);
-    this.position.set(0, 0, 10);
-    scene.add(this);
+    super(scene, geometry, material);
+    this.position.set(0, 0, 30 * index);
   }
   move() {
     this.rotation.z += 0.01;
+    super.move();
   }
 };
 
@@ -22301,7 +22328,10 @@ var GameScene = class extends Scene {
     this.createBackground();
     this.createLighting();
     this.spaceship = new Spaceship(this);
-    this.obstacles = new Ring(this);
+    this.obstacles = [];
+    for (let i2 = 0; i2 < 10; i2++) {
+      this.obstacles.push(new Ring(this, i2));
+    }
   }
   createLighting() {
     this.add(new AmbientLight(13421772, 0.2));
@@ -22316,9 +22346,8 @@ var GameScene = class extends Scene {
     this.backgroundStars = new BackgroundStars(this);
   }
   loop(delta) {
-    this.backgroundStars.move(delta);
     this.spaceship.move(delta);
-    this.obstacles.move();
+    this.obstacles.forEach((obs) => obs.move());
   }
 };
 

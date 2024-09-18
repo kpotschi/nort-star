@@ -3,13 +3,14 @@ import BackgroundStars from '../entities/BackgroundStars';
 import App from '../app';
 import Spaceship from '../entities/Spaceship';
 import Ring from '../entities/obstacles/Ring';
+import Obstacle from '../entities/obstacles/Obstacle';
 
 export default class GameScene extends THREE.Scene {
 	private backgroundStars: BackgroundStars;
 	public app: App;
 	public spaceship: Spaceship;
 	private pointLight: THREE.PointLight;
-	obstacles: Ring;
+	obstacles: Obstacle[];
 
 	constructor(app: App) {
 		super();
@@ -22,7 +23,12 @@ export default class GameScene extends THREE.Scene {
 		this.createLighting();
 
 		this.spaceship = new Spaceship(this);
-		this.obstacles = new Ring(this);
+
+		this.obstacles = [];
+
+		for (let i = 0; i < 10; i++) {
+			this.obstacles.push(new Ring(this, i));
+		}
 		// const geometry = new THREE.BoxGeometry();
 		// const material = new THREE.MeshStandardMaterial({
 		// 	color: 0x00ff00,
@@ -49,8 +55,8 @@ export default class GameScene extends THREE.Scene {
 	}
 
 	public loop(delta: number) {
-		this.backgroundStars.move(delta);
+		// this.backgroundStars.move(delta);
 		this.spaceship.move(delta);
-		this.obstacles.move();
+		this.obstacles.forEach((obs: Obstacle) => obs.move());
 	}
 }
