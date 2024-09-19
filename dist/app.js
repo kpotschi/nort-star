@@ -18187,16 +18187,16 @@ var Scene = class extends Object3D {
     return data;
   }
 };
-var PointsMaterial = class extends Material {
+var LineBasicMaterial = class extends Material {
   constructor(parameters) {
     super();
-    this.isPointsMaterial = true;
-    this.type = "PointsMaterial";
+    this.isLineBasicMaterial = true;
+    this.type = "LineBasicMaterial";
     this.color = new Color(16777215);
     this.map = null;
-    this.alphaMap = null;
-    this.size = 1;
-    this.sizeAttenuation = true;
+    this.linewidth = 1;
+    this.linecap = "round";
+    this.linejoin = "round";
     this.fog = true;
     this.setValues(parameters);
   }
@@ -18204,22 +18204,25 @@ var PointsMaterial = class extends Material {
     super.copy(source);
     this.color.copy(source.color);
     this.map = source.map;
-    this.alphaMap = source.alphaMap;
-    this.size = source.size;
-    this.sizeAttenuation = source.sizeAttenuation;
+    this.linewidth = source.linewidth;
+    this.linecap = source.linecap;
+    this.linejoin = source.linejoin;
     this.fog = source.fog;
     return this;
   }
 };
-var _inverseMatrix = /* @__PURE__ */ new Matrix4();
-var _ray = /* @__PURE__ */ new Ray();
-var _sphere = /* @__PURE__ */ new Sphere();
-var _position$2 = /* @__PURE__ */ new Vector3();
-var Points = class extends Object3D {
-  constructor(geometry = new BufferGeometry(), material = new PointsMaterial()) {
+var _vStart = /* @__PURE__ */ new Vector3();
+var _vEnd = /* @__PURE__ */ new Vector3();
+var _inverseMatrix$1 = /* @__PURE__ */ new Matrix4();
+var _ray$1 = /* @__PURE__ */ new Ray();
+var _sphere$1 = /* @__PURE__ */ new Sphere();
+var _intersectPointOnRay = /* @__PURE__ */ new Vector3();
+var _intersectPointOnSegment = /* @__PURE__ */ new Vector3();
+var Line = class extends Object3D {
+  constructor(geometry = new BufferGeometry(), material = new LineBasicMaterial()) {
     super();
-    this.isPoints = true;
-    this.type = "Points";
+    this.isLine = true;
+    this.type = "Line";
     this.geometry = geometry;
     this.material = material;
     this.updateMorphTargets();
@@ -18230,37 +18233,74 @@ var Points = class extends Object3D {
     this.geometry = source.geometry;
     return this;
   }
+  computeLineDistances() {
+    const geometry = this.geometry;
+    if (geometry.index === null) {
+      const positionAttribute = geometry.attributes.position;
+      const lineDistances = [0];
+      for (let i2 = 1, l2 = positionAttribute.count; i2 < l2; i2++) {
+        _vStart.fromBufferAttribute(positionAttribute, i2 - 1);
+        _vEnd.fromBufferAttribute(positionAttribute, i2);
+        lineDistances[i2] = lineDistances[i2 - 1];
+        lineDistances[i2] += _vStart.distanceTo(_vEnd);
+      }
+      geometry.setAttribute("lineDistance", new Float32BufferAttribute(lineDistances, 1));
+    } else {
+      console.warn("THREE.Line.computeLineDistances(): Computation only possible with non-indexed BufferGeometry.");
+    }
+    return this;
+  }
   raycast(raycaster, intersects) {
     const geometry = this.geometry;
     const matrixWorld = this.matrixWorld;
-    const threshold = raycaster.params.Points.threshold;
+    const threshold = raycaster.params.Line.threshold;
     const drawRange = geometry.drawRange;
     if (geometry.boundingSphere === null) geometry.computeBoundingSphere();
-    _sphere.copy(geometry.boundingSphere);
-    _sphere.applyMatrix4(matrixWorld);
-    _sphere.radius += threshold;
-    if (raycaster.ray.intersectsSphere(_sphere) === false) return;
-    _inverseMatrix.copy(matrixWorld).invert();
-    _ray.copy(raycaster.ray).applyMatrix4(_inverseMatrix);
+    _sphere$1.copy(geometry.boundingSphere);
+    _sphere$1.applyMatrix4(matrixWorld);
+    _sphere$1.radius += threshold;
+    if (raycaster.ray.intersectsSphere(_sphere$1) === false) return;
+    _inverseMatrix$1.copy(matrixWorld).invert();
+    _ray$1.copy(raycaster.ray).applyMatrix4(_inverseMatrix$1);
     const localThreshold = threshold / ((this.scale.x + this.scale.y + this.scale.z) / 3);
     const localThresholdSq = localThreshold * localThreshold;
+    const step = this.isLineSegments ? 2 : 1;
     const index = geometry.index;
     const attributes = geometry.attributes;
     const positionAttribute = attributes.position;
     if (index !== null) {
       const start = Math.max(0, drawRange.start);
       const end = Math.min(index.count, drawRange.start + drawRange.count);
-      for (let i2 = start, il = end; i2 < il; i2++) {
+      for (let i2 = start, l2 = end - 1; i2 < l2; i2 += step) {
         const a2 = index.getX(i2);
-        _position$2.fromBufferAttribute(positionAttribute, a2);
-        testPoint(_position$2, a2, localThresholdSq, matrixWorld, raycaster, intersects, this);
+        const b = index.getX(i2 + 1);
+        const intersect = checkIntersection(this, raycaster, _ray$1, localThresholdSq, a2, b);
+        if (intersect) {
+          intersects.push(intersect);
+        }
+      }
+      if (this.isLineLoop) {
+        const a2 = index.getX(end - 1);
+        const b = index.getX(start);
+        const intersect = checkIntersection(this, raycaster, _ray$1, localThresholdSq, a2, b);
+        if (intersect) {
+          intersects.push(intersect);
+        }
       }
     } else {
       const start = Math.max(0, drawRange.start);
       const end = Math.min(positionAttribute.count, drawRange.start + drawRange.count);
-      for (let i2 = start, l2 = end; i2 < l2; i2++) {
-        _position$2.fromBufferAttribute(positionAttribute, i2);
-        testPoint(_position$2, i2, localThresholdSq, matrixWorld, raycaster, intersects, this);
+      for (let i2 = start, l2 = end - 1; i2 < l2; i2 += step) {
+        const intersect = checkIntersection(this, raycaster, _ray$1, localThresholdSq, i2, i2 + 1);
+        if (intersect) {
+          intersects.push(intersect);
+        }
+      }
+      if (this.isLineLoop) {
+        const intersect = checkIntersection(this, raycaster, _ray$1, localThresholdSq, end - 1, start);
+        if (intersect) {
+          intersects.push(intersect);
+        }
       }
     }
   }
@@ -18282,24 +18322,151 @@ var Points = class extends Object3D {
     }
   }
 };
-function testPoint(point, index, localThresholdSq, matrixWorld, raycaster, intersects, object) {
-  const rayPointDistanceSq = _ray.distanceSqToPoint(point);
-  if (rayPointDistanceSq < localThresholdSq) {
-    const intersectPoint = new Vector3();
-    _ray.closestPointToPoint(point, intersectPoint);
-    intersectPoint.applyMatrix4(matrixWorld);
-    const distance = raycaster.ray.origin.distanceTo(intersectPoint);
-    if (distance < raycaster.near || distance > raycaster.far) return;
-    intersects.push({
-      distance,
-      distanceToRay: Math.sqrt(rayPointDistanceSq),
-      point: intersectPoint,
-      index,
-      face: null,
-      object
-    });
-  }
+function checkIntersection(object, raycaster, ray, thresholdSq, a2, b) {
+  const positionAttribute = object.geometry.attributes.position;
+  _vStart.fromBufferAttribute(positionAttribute, a2);
+  _vEnd.fromBufferAttribute(positionAttribute, b);
+  const distSq = ray.distanceSqToSegment(_vStart, _vEnd, _intersectPointOnRay, _intersectPointOnSegment);
+  if (distSq > thresholdSq) return;
+  _intersectPointOnRay.applyMatrix4(object.matrixWorld);
+  const distance = raycaster.ray.origin.distanceTo(_intersectPointOnRay);
+  if (distance < raycaster.near || distance > raycaster.far) return;
+  return {
+    distance,
+    // What do we want? intersection point on the ray or on the segment??
+    // point: raycaster.ray.at( distance ),
+    point: _intersectPointOnSegment.clone().applyMatrix4(object.matrixWorld),
+    index: a2,
+    face: null,
+    faceIndex: null,
+    object
+  };
 }
+var CylinderGeometry = class _CylinderGeometry extends BufferGeometry {
+  constructor(radiusTop = 1, radiusBottom = 1, height = 1, radialSegments = 32, heightSegments = 1, openEnded = false, thetaStart = 0, thetaLength = Math.PI * 2) {
+    super();
+    this.type = "CylinderGeometry";
+    this.parameters = {
+      radiusTop,
+      radiusBottom,
+      height,
+      radialSegments,
+      heightSegments,
+      openEnded,
+      thetaStart,
+      thetaLength
+    };
+    const scope = this;
+    radialSegments = Math.floor(radialSegments);
+    heightSegments = Math.floor(heightSegments);
+    const indices = [];
+    const vertices = [];
+    const normals = [];
+    const uvs = [];
+    let index = 0;
+    const indexArray = [];
+    const halfHeight = height / 2;
+    let groupStart = 0;
+    generateTorso();
+    if (openEnded === false) {
+      if (radiusTop > 0) generateCap(true);
+      if (radiusBottom > 0) generateCap(false);
+    }
+    this.setIndex(indices);
+    this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+    this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+    this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+    function generateTorso() {
+      const normal = new Vector3();
+      const vertex2 = new Vector3();
+      let groupCount = 0;
+      const slope = (radiusBottom - radiusTop) / height;
+      for (let y = 0; y <= heightSegments; y++) {
+        const indexRow = [];
+        const v = y / heightSegments;
+        const radius = v * (radiusBottom - radiusTop) + radiusTop;
+        for (let x = 0; x <= radialSegments; x++) {
+          const u2 = x / radialSegments;
+          const theta = u2 * thetaLength + thetaStart;
+          const sinTheta = Math.sin(theta);
+          const cosTheta = Math.cos(theta);
+          vertex2.x = radius * sinTheta;
+          vertex2.y = -v * height + halfHeight;
+          vertex2.z = radius * cosTheta;
+          vertices.push(vertex2.x, vertex2.y, vertex2.z);
+          normal.set(sinTheta, slope, cosTheta).normalize();
+          normals.push(normal.x, normal.y, normal.z);
+          uvs.push(u2, 1 - v);
+          indexRow.push(index++);
+        }
+        indexArray.push(indexRow);
+      }
+      for (let x = 0; x < radialSegments; x++) {
+        for (let y = 0; y < heightSegments; y++) {
+          const a2 = indexArray[y][x];
+          const b = indexArray[y + 1][x];
+          const c2 = indexArray[y + 1][x + 1];
+          const d2 = indexArray[y][x + 1];
+          indices.push(a2, b, d2);
+          indices.push(b, c2, d2);
+          groupCount += 6;
+        }
+      }
+      scope.addGroup(groupStart, groupCount, 0);
+      groupStart += groupCount;
+    }
+    function generateCap(top) {
+      const centerIndexStart = index;
+      const uv = new Vector2();
+      const vertex2 = new Vector3();
+      let groupCount = 0;
+      const radius = top === true ? radiusTop : radiusBottom;
+      const sign = top === true ? 1 : -1;
+      for (let x = 1; x <= radialSegments; x++) {
+        vertices.push(0, halfHeight * sign, 0);
+        normals.push(0, sign, 0);
+        uvs.push(0.5, 0.5);
+        index++;
+      }
+      const centerIndexEnd = index;
+      for (let x = 0; x <= radialSegments; x++) {
+        const u2 = x / radialSegments;
+        const theta = u2 * thetaLength + thetaStart;
+        const cosTheta = Math.cos(theta);
+        const sinTheta = Math.sin(theta);
+        vertex2.x = radius * sinTheta;
+        vertex2.y = halfHeight * sign;
+        vertex2.z = radius * cosTheta;
+        vertices.push(vertex2.x, vertex2.y, vertex2.z);
+        normals.push(0, sign, 0);
+        uv.x = cosTheta * 0.5 + 0.5;
+        uv.y = sinTheta * 0.5 * sign + 0.5;
+        uvs.push(uv.x, uv.y);
+        index++;
+      }
+      for (let x = 0; x < radialSegments; x++) {
+        const c2 = centerIndexStart + x;
+        const i2 = centerIndexEnd + x;
+        if (top === true) {
+          indices.push(i2, i2 + 1, c2);
+        } else {
+          indices.push(i2 + 1, i2, c2);
+        }
+        groupCount += 3;
+      }
+      scope.addGroup(groupStart, groupCount, top === true ? 1 : 2);
+      groupStart += groupCount;
+    }
+  }
+  copy(source) {
+    super.copy(source);
+    this.parameters = Object.assign({}, source.parameters);
+    return this;
+  }
+  static fromJSON(data) {
+    return new _CylinderGeometry(data.radiusTop, data.radiusBottom, data.height, data.radialSegments, data.heightSegments, data.openEnded, data.thetaStart, data.thetaLength);
+  }
+};
 var RingGeometry = class _RingGeometry extends BufferGeometry {
   constructor(innerRadius = 0.5, outerRadius = 1, thetaSegments = 32, phiSegments = 1, thetaStart = 0, thetaLength = Math.PI * 2) {
     super();
@@ -18505,6 +18672,82 @@ var MeshStandardMaterial = class extends Material {
     this.envMap = source.envMap;
     this.envMapRotation.copy(source.envMapRotation);
     this.envMapIntensity = source.envMapIntensity;
+    this.wireframe = source.wireframe;
+    this.wireframeLinewidth = source.wireframeLinewidth;
+    this.wireframeLinecap = source.wireframeLinecap;
+    this.wireframeLinejoin = source.wireframeLinejoin;
+    this.flatShading = source.flatShading;
+    this.fog = source.fog;
+    return this;
+  }
+};
+var MeshPhongMaterial = class extends Material {
+  constructor(parameters) {
+    super();
+    this.isMeshPhongMaterial = true;
+    this.type = "MeshPhongMaterial";
+    this.color = new Color(16777215);
+    this.specular = new Color(1118481);
+    this.shininess = 30;
+    this.map = null;
+    this.lightMap = null;
+    this.lightMapIntensity = 1;
+    this.aoMap = null;
+    this.aoMapIntensity = 1;
+    this.emissive = new Color(0);
+    this.emissiveIntensity = 1;
+    this.emissiveMap = null;
+    this.bumpMap = null;
+    this.bumpScale = 1;
+    this.normalMap = null;
+    this.normalMapType = TangentSpaceNormalMap;
+    this.normalScale = new Vector2(1, 1);
+    this.displacementMap = null;
+    this.displacementScale = 1;
+    this.displacementBias = 0;
+    this.specularMap = null;
+    this.alphaMap = null;
+    this.envMap = null;
+    this.envMapRotation = new Euler();
+    this.combine = MultiplyOperation;
+    this.reflectivity = 1;
+    this.refractionRatio = 0.98;
+    this.wireframe = false;
+    this.wireframeLinewidth = 1;
+    this.wireframeLinecap = "round";
+    this.wireframeLinejoin = "round";
+    this.flatShading = false;
+    this.fog = true;
+    this.setValues(parameters);
+  }
+  copy(source) {
+    super.copy(source);
+    this.color.copy(source.color);
+    this.specular.copy(source.specular);
+    this.shininess = source.shininess;
+    this.map = source.map;
+    this.lightMap = source.lightMap;
+    this.lightMapIntensity = source.lightMapIntensity;
+    this.aoMap = source.aoMap;
+    this.aoMapIntensity = source.aoMapIntensity;
+    this.emissive.copy(source.emissive);
+    this.emissiveMap = source.emissiveMap;
+    this.emissiveIntensity = source.emissiveIntensity;
+    this.bumpMap = source.bumpMap;
+    this.bumpScale = source.bumpScale;
+    this.normalMap = source.normalMap;
+    this.normalMapType = source.normalMapType;
+    this.normalScale.copy(source.normalScale);
+    this.displacementMap = source.displacementMap;
+    this.displacementScale = source.displacementScale;
+    this.displacementBias = source.displacementBias;
+    this.specularMap = source.specularMap;
+    this.alphaMap = source.alphaMap;
+    this.envMap = source.envMap;
+    this.envMapRotation.copy(source.envMapRotation);
+    this.combine = source.combine;
+    this.reflectivity = source.reflectivity;
+    this.refractionRatio = source.refractionRatio;
     this.wireframe = source.wireframe;
     this.wireframeLinewidth = source.wireframeLinewidth;
     this.wireframeLinecap = source.wireframeLinecap;
@@ -19820,6 +20063,65 @@ var PointLightHelper = class extends Mesh {
     }
   }
 };
+var _axis = /* @__PURE__ */ new Vector3();
+var _lineGeometry;
+var _coneGeometry;
+var ArrowHelper = class extends Object3D {
+  // dir is assumed to be normalized
+  constructor(dir = new Vector3(0, 0, 1), origin = new Vector3(0, 0, 0), length = 1, color = 16776960, headLength = length * 0.2, headWidth = headLength * 0.2) {
+    super();
+    this.type = "ArrowHelper";
+    if (_lineGeometry === void 0) {
+      _lineGeometry = new BufferGeometry();
+      _lineGeometry.setAttribute("position", new Float32BufferAttribute([0, 0, 0, 0, 1, 0], 3));
+      _coneGeometry = new CylinderGeometry(0, 0.5, 1, 5, 1);
+      _coneGeometry.translate(0, -0.5, 0);
+    }
+    this.position.copy(origin);
+    this.line = new Line(_lineGeometry, new LineBasicMaterial({ color, toneMapped: false }));
+    this.line.matrixAutoUpdate = false;
+    this.add(this.line);
+    this.cone = new Mesh(_coneGeometry, new MeshBasicMaterial({ color, toneMapped: false }));
+    this.cone.matrixAutoUpdate = false;
+    this.add(this.cone);
+    this.setDirection(dir);
+    this.setLength(length, headLength, headWidth);
+  }
+  setDirection(dir) {
+    if (dir.y > 0.99999) {
+      this.quaternion.set(0, 0, 0, 1);
+    } else if (dir.y < -0.99999) {
+      this.quaternion.set(1, 0, 0, 0);
+    } else {
+      _axis.set(dir.z, 0, -dir.x).normalize();
+      const radians = Math.acos(dir.y);
+      this.quaternion.setFromAxisAngle(_axis, radians);
+    }
+  }
+  setLength(length, headLength = length * 0.2, headWidth = headLength * 0.2) {
+    this.line.scale.set(1, Math.max(1e-4, length - headLength), 1);
+    this.line.updateMatrix();
+    this.cone.scale.set(headWidth, headLength, headWidth);
+    this.cone.position.y = length;
+    this.cone.updateMatrix();
+  }
+  setColor(color) {
+    this.line.material.color.set(color);
+    this.cone.material.color.set(color);
+  }
+  copy(source) {
+    super.copy(source, false);
+    this.line.copy(source.line);
+    this.cone.copy(source.cone);
+    return this;
+  }
+  dispose() {
+    this.line.geometry.dispose();
+    this.line.material.dispose();
+    this.cone.geometry.dispose();
+    this.cone.material.dispose();
+  }
+};
 var Controls = class extends EventDispatcher {
   constructor(object, domElement) {
     super();
@@ -20665,6 +20967,13 @@ var CONFIG = {
   },
   BACKGROUND: {
     MOVEMENT_SPEED: 1
+  },
+  OBSTACLES: {
+    MAX_Z_ROTATION: 0.01,
+    COLORS: [16711680, 65280, 255]
+  },
+  CAMERA: {
+    LERP_SPEED: 0.03
   }
 };
 
@@ -20709,7 +21018,7 @@ var CustomRenderer = class extends WebGLRenderer {
 var _changeEvent = { type: "change" };
 var _startEvent = { type: "start" };
 var _endEvent = { type: "end" };
-var _ray2 = new Ray();
+var _ray = new Ray();
 var _plane = new Plane();
 var _TILT_LIMIT = Math.cos(70 * MathUtils.DEG2RAD);
 var _v = new Vector3();
@@ -20947,13 +21256,13 @@ var OrbitControls = class extends Controls {
         if (this.screenSpacePanning) {
           this.target.set(0, 0, -1).transformDirection(this.object.matrix).multiplyScalar(newRadius).add(this.object.position);
         } else {
-          _ray2.origin.copy(this.object.position);
-          _ray2.direction.set(0, 0, -1).transformDirection(this.object.matrix);
-          if (Math.abs(this.object.up.dot(_ray2.direction)) < _TILT_LIMIT) {
+          _ray.origin.copy(this.object.position);
+          _ray.direction.set(0, 0, -1).transformDirection(this.object.matrix);
+          if (Math.abs(this.object.up.dot(_ray.direction)) < _TILT_LIMIT) {
             this.object.lookAt(this.target);
           } else {
             _plane.setFromNormalAndCoplanarPoint(this.object.up, this.target);
-            _ray2.intersectPlane(_plane, this.target);
+            _ray.intersectPlane(_plane, this.target);
           }
         }
       }
@@ -22020,9 +22329,12 @@ var stats_module_default = Stats;
 var Debugger = class extends lil_gui_module_min_default {
   app;
   stats;
+  controls;
+  spaceship;
   constructor(app) {
     super();
     this.app = app;
+    this.spaceship = app.currentScene.spaceship;
     this.addStats();
     this.init();
   }
@@ -22031,6 +22343,38 @@ var Debugger = class extends lil_gui_module_min_default {
     this.app.renderer.domElement.appendChild(this.stats.dom);
   }
   init() {
+    this.initGui();
+  }
+  initControls() {
+    this.controls = new OrbitControls(
+      this.app.camera,
+      this.app.renderer.domElement
+    );
+  }
+  initDirection() {
+    const origin = new Vector3(0, 0, 0);
+    const length = 3;
+    const x = new ArrowHelper(
+      new Vector3(1, 0, 0),
+      origin,
+      length,
+      16776960
+    );
+    const y = new ArrowHelper(
+      new Vector3(0, 1, 0),
+      origin,
+      length,
+      16711680
+    );
+    const z = new ArrowHelper(
+      new Vector3(0, 0, 1),
+      origin,
+      length,
+      65280
+    );
+    this.app.currentScene.add(x, y, z);
+  }
+  initGui() {
     const bloomFolder = this.addFolder("bloom");
     bloomFolder.add(this.app.renderer.bloomPass, "threshold", 0, 1).onChange((value) => {
       this.app.renderer.bloomPass.threshold = Number(value);
@@ -22045,56 +22389,6 @@ var Debugger = class extends lil_gui_module_min_default {
     toneMappingFolder.add(CONFIG.RENDER.PASS, "EXPOSURE", 0.1, 2).onChange((value) => {
       this.app.renderer.toneMappingExposure = Math.pow(value, 4);
     });
-    const controls = new OrbitControls(
-      this.app.camera,
-      this.app.renderer.domElement
-    );
-  }
-};
-
-// src/entities/BackgroundStars.ts
-var BackgroundStars = class {
-  scene;
-  stars;
-  starPositions;
-  constructor(scene) {
-    this.scene = scene;
-    this.init();
-  }
-  init() {
-    const starGeometry = new BufferGeometry();
-    const starCount = 1e3;
-    this.starPositions = new Float32Array(starCount * 3);
-    for (let i2 = 0; i2 < starCount; i2++) {
-      this.starPositions[i2 * 3] = (Math.random() - 0.5) * 1e3;
-      this.starPositions[i2 * 3 + 1] = (Math.random() - 0.5) * 1e3;
-      this.starPositions[i2 * 3 + 2] = (Math.random() - 0.5) * 1e3;
-    }
-    starGeometry.setAttribute(
-      "position",
-      new Float32BufferAttribute(this.starPositions, 3)
-    );
-    const starMaterial = new PointsMaterial({
-      color: 16777215,
-      size: 1,
-      sizeAttenuation: true
-    });
-    this.stars = new Points(starGeometry, starMaterial);
-    this.scene.add(this.stars);
-  }
-  move(delta) {
-    if (this.stars) {
-      const rotationSpeedX = this.scene.spaceship.velocityX;
-      const rotationSpeedY = this.scene.spaceship.velocityY;
-      const moveX = rotationSpeedY * CONFIG.BACKGROUND.MOVEMENT_SPEED * delta;
-      const moveZ = rotationSpeedX * CONFIG.BACKGROUND.MOVEMENT_SPEED * delta;
-      for (let i2 = 0; i2 < this.starPositions.length; i2 += 3) {
-        this.starPositions[i2] -= moveX;
-        this.starPositions[i2 + 2] -= moveZ;
-      }
-      console.log(this.starPositions);
-      this.stars.geometry.attributes.position.needsUpdate = true;
-    }
   }
 };
 
@@ -22103,6 +22397,7 @@ var Spaceship = class _Spaceship extends Mesh {
   scene;
   _velocityX = 0;
   _velocityY = 0;
+  direction = new Vector3(0, 0, 1);
   constructor(scene) {
     const material = _Spaceship.getMaterial();
     const geometry = _Spaceship.getGeometry();
@@ -22125,9 +22420,9 @@ var Spaceship = class _Spaceship extends Mesh {
   static getMaterial() {
     return new MeshStandardMaterial({
       color: 65280,
-      metalness: 0.3,
+      metalness: 0.1,
       // Make it interact with light properly
-      roughness: 0.03
+      roughness: 0.3
       // Shiny appearance
       // side: THREE.DoubleSide, // Render both sides of the faces
     });
@@ -22237,61 +22532,59 @@ var Spaceship = class _Spaceship extends Mesh {
     return geometry;
   }
   move(delta) {
-    this.rotation.x = this.velocityX * Math.PI / 4;
-    this.rotation.y = this.velocityY * Math.PI / 4;
     if (this.scene.app.keysPressed["w"]) {
-      this.velocityX += CONFIG.CONTROLS.ROTATION_SPEED;
+      this.rotateOnAxis(
+        new Vector3(1, 0, 0),
+        CONFIG.CONTROLS.ROTATION_SPEED
+      );
     }
     if (this.scene.app.keysPressed["s"]) {
-      this.velocityX -= CONFIG.CONTROLS.ROTATION_SPEED;
-    }
-    if (!this.scene.app.keysPressed["w"] && !this.scene.app.keysPressed["s"]) {
-      this.velocityX = MathUtils.lerp(
-        this.velocityX,
-        0,
-        CONFIG.CONTROLS.ROTATION_RETURN_SPEED
+      this.rotateOnAxis(
+        new Vector3(-1, 0, 0),
+        CONFIG.CONTROLS.ROTATION_SPEED
       );
     }
     if (this.scene.app.keysPressed["a"]) {
-      this.velocityY += CONFIG.CONTROLS.ROTATION_SPEED;
-    }
-    if (this.scene.app.keysPressed["d"]) {
-      this.velocityY -= CONFIG.CONTROLS.ROTATION_SPEED;
-    }
-    if (!this.scene.app.keysPressed["a"] && !this.scene.app.keysPressed["d"]) {
-      this.velocityY = MathUtils.lerp(
-        this.velocityY,
-        0,
-        CONFIG.CONTROLS.ROTATION_RETURN_SPEED
+      this.rotateOnAxis(
+        new Vector3(0, 1, 0),
+        CONFIG.CONTROLS.ROTATION_SPEED
       );
     }
+    if (this.scene.app.keysPressed["d"]) {
+      this.rotateOnAxis(
+        new Vector3(0, -1, 0),
+        CONFIG.CONTROLS.ROTATION_SPEED
+      );
+    }
+  }
+  updateDirection() {
+    const forward = new Vector3(0, 0, -1);
+    forward.applyQuaternion(this.quaternion);
+    forward.normalize();
+    this.direction.copy(forward);
+    console.log(this.direction);
   }
 };
 
 // src/entities/obstacles/Obstacle.ts
 var Obstacle = class extends Mesh {
   scene;
+  speed;
+  // Speed of movement
   constructor(scene, geometry, material) {
     super(geometry, material);
     this.scene = scene;
+    this.speed = 0.1;
     scene.add(this);
   }
-  move() {
-    this.rotateAroundShip();
-  }
-  resetPosition() {
-    if (this.position.z < 0) this.position.set(0, 0, 20);
-  }
-  rotateAroundShip() {
-    const currentAngle = Math.atan2(this.position.x, this.position.z);
-    const rotationSpeed = this.scene.spaceship.velocityY * 0.01;
-    const newAngle = currentAngle - rotationSpeed;
-    const distanceFromShip = this.position.distanceTo(
-      new Vector3(0, 0, 0)
+  update() {
+    const spaceship = this.scene.spaceship;
+    const forwardDirection = new Vector3(0, 0, 1).applyQuaternion(
+      spaceship.quaternion
     );
-    const newX = distanceFromShip * Math.sin(newAngle);
-    const newZ = distanceFromShip * Math.cos(newAngle);
-    this.position.set(newX, this.position.y, newZ);
+    const moveDirection = forwardDirection.clone().negate();
+    moveDirection.multiplyScalar(this.speed);
+    this.position.add(moveDirection);
   }
 };
 
@@ -22299,16 +22592,50 @@ var Obstacle = class extends Mesh {
 var Ring = class extends Obstacle {
   constructor(scene, index) {
     const geometry = new RingGeometry(4, 5, 8, 1, 0, Math.PI * 2);
+    const colors = CONFIG.OBSTACLES.COLORS;
     const material = new MeshStandardMaterial({
-      color: 16776960,
+      color: colors[Math.floor(Math.random() * colors.length)],
       side: DoubleSide
     });
     super(scene, geometry, material);
     this.position.set(0, 0, 30 * index);
   }
-  move() {
-    this.rotation.z += 0.01;
-    super.move();
+  update() {
+    this.rotateZ(CONFIG.OBSTACLES.MAX_Z_ROTATION);
+    super.update();
+  }
+};
+
+// src/entities/Sun.ts
+var Sun = class extends Object3D {
+  scene;
+  sunMesh;
+  sunLight;
+  time;
+  constructor(scene) {
+    super();
+    this.scene = scene;
+    this.time = 0;
+    const sunGeometry = new SphereGeometry(1, 16, 16);
+    const sunMaterial = new MeshPhongMaterial({
+      color: 16776960,
+      emissive: 16776960,
+      emissiveIntensity: 1
+    });
+    this.sunMesh = new Mesh(sunGeometry, sunMaterial);
+    this.add(this.sunMesh);
+    this.sunLight = new PointLight(16777215, 1);
+    this.sunLight.castShadow = true;
+    this.sunLight.shadow.bias = -0.01;
+    this.sunLight.position.set(0, 0, 0);
+    this.add(this.sunLight);
+    const helper = new PointLightHelper(this.sunLight);
+    this.add(helper);
+    this.scene.add(this);
+    this.position.set(-20, 20, 70);
+    this.lookAt(0, 0, 0);
+  }
+  update(deltaTime) {
   }
 };
 
@@ -22319,6 +22646,7 @@ var GameScene = class extends Scene {
   spaceship;
   pointLight;
   obstacles;
+  sun;
   constructor(app) {
     super();
     this.app = app;
@@ -22332,22 +22660,51 @@ var GameScene = class extends Scene {
     for (let i2 = 0; i2 < 10; i2++) {
       this.obstacles.push(new Ring(this, i2));
     }
+    this.sun = new Sun(this);
   }
   createLighting() {
-    this.add(new AmbientLight(13421772, 0.2));
-    this.pointLight = new PointLight(13421772, 100);
-    this.pointLight.position.set(3, 5, 0);
-    const helper = new PointLightHelper(this.pointLight);
-    this.add(this.pointLight);
-    this.add(helper);
-    this.pointLight.lookAt(0, 0, 0);
+    this.add(new AmbientLight(13421772, 0.6));
   }
   createBackground() {
-    this.backgroundStars = new BackgroundStars(this);
   }
   loop(delta) {
     this.spaceship.move(delta);
-    this.obstacles.forEach((obs) => obs.move());
+    this.obstacles.forEach((obs) => obs.update());
+    this.sun.update(delta);
+  }
+};
+
+// src/entities/CustomCamera.ts
+var CustomCamera = class extends PerspectiveCamera {
+  app;
+  tailOffset;
+  lerpSpeed;
+  // Speed of lerp
+  constructor(app) {
+    super(75, window.innerWidth / window.innerHeight, 0.1, 1e3);
+    this.app = app;
+    this.tailOffset = new Vector3(0, 2, -10);
+    this.position.set(0, 2, -10);
+    this.lerpSpeed = CONFIG.CAMERA.LERP_SPEED;
+  }
+  update() {
+    const spaceship = this.app.currentScene.spaceship;
+    const offset = this.tailOffset.clone();
+    offset.applyQuaternion(spaceship.quaternion);
+    const targetPosition = spaceship.position.clone().add(offset);
+    this.position.lerp(targetPosition, this.lerpSpeed);
+    const localUp = new Vector3(0, 1, 0).applyQuaternion(
+      spaceship.quaternion
+    );
+    this.up.copy(localUp);
+    const forwardDirection = new Vector3(0, 0, -1).applyQuaternion(
+      spaceship.quaternion
+    );
+    const lookAtPosition = spaceship.position.clone().add(forwardDirection);
+    const targetQuaternion = new Quaternion().setFromRotationMatrix(
+      new Matrix4().lookAt(this.position, lookAtPosition, localUp)
+    );
+    this.quaternion.slerp(targetQuaternion, this.lerpSpeed);
   }
 };
 
@@ -22372,7 +22729,7 @@ var App = class {
   }
   init() {
     this.renderer = new CustomRenderer(this);
-    this.setupCamera();
+    this.camera = new CustomCamera(this);
     this.setupAnimationLoop();
     this.setupResizeListener();
     this.startScene();
@@ -22388,21 +22745,12 @@ var App = class {
       this.keysPressed[event.key.toLowerCase()] = false;
     });
   }
-  setupCamera() {
-    this.camera = new PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1e3
-    );
-    this.camera.position.z = -5;
-    this.camera.lookAt(0, 0, 0);
-  }
   setupAnimationLoop() {
     this.renderer.setAnimationLoop(this.loop.bind(this));
   }
   loop() {
     const delta = this.clock.getDelta();
+    this.camera.update();
     if (this.currentScene) this.currentScene.loop(delta);
     if (this.debugger) this.debugger.stats.update();
     this.renderer.composer.render();

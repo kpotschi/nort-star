@@ -4,6 +4,8 @@ import { CONFIG } from '../../config/config';
 
 export default class Obstacle extends THREE.Mesh {
 	protected scene: GameScene;
+	protected speed: number; // Speed of movement
+
 	constructor(
 		scene: GameScene,
 		geometry: THREE.BufferGeometry,
@@ -11,39 +13,17 @@ export default class Obstacle extends THREE.Mesh {
 	) {
 		super(geometry, material);
 		this.scene = scene;
+		this.speed = 0.1; // You can adjust speed in the config
 		scene.add(this);
 	}
 
-	public move() {
-		// this.position.z -= 0.1;
-		// this.position.setY(this.position.y + this.scene.spaceship.velocityX);
-		// this.position.setX(this.position.x - this.scene.spaceship.velocityY);
-		this.rotateAroundShip();
-		// this.resetPosition();
-	}
-	private resetPosition() {
-		if (this.position.z < 0) this.position.set(0, 0, 20);
-	}
-	private rotateAroundShip() {
-		const currentAngle = Math.atan2(this.position.x, this.position.z); // atan2 gives the angle based on current X and Z position
-
-		// Add a delta angle (e.g., based on the ship's velocity or a constant value for continuous rotation)
-		const rotationSpeed = this.scene.spaceship.velocityY * 0.01; // Adjust the multiplier to control rotation speed
-		const newAngle = currentAngle - rotationSpeed; // Update the angle by adding the delta
-
-		// Calculate the distance from the obstacle to the spaceship (0,0,0)
-		const distanceFromShip = this.position.distanceTo(
-			new THREE.Vector3(0, 0, 0)
+	public update() {
+		const spaceship = this.scene.spaceship; // Assuming your GameScene has a spaceship reference
+		const forwardDirection = new THREE.Vector3(0, 0, 1).applyQuaternion(
+			spaceship.quaternion
 		);
-
-		// Calculate the new X and Z positions based on the updated angle
-		const newX = distanceFromShip * Math.sin(newAngle); // Calculate new X position
-		const newZ = distanceFromShip * Math.cos(newAngle); // Calculate new Z position
-		this.position.set(newX, this.position.y, newZ);
-
-		// this.position.setX(this.position.x - this.scene.spaceship.velocityY);
-		// Optional: Add some lateral movement based on spaceship velocity (if needed)
-		// this.position.x += this.scene.spaceship.velocityX * 0.01; // Adjust the multiplier for how much influence the ship has
-		// this.position.y += this.scene.spaceship.velocityY * 0.01; // Adjust the multiplier for how much influence the ship has
+		const moveDirection = forwardDirection.clone().negate();
+		moveDirection.multiplyScalar(this.speed);
+		this.position.add(moveDirection);
 	}
 }

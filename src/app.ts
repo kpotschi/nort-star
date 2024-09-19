@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import CustomRenderer from './entities/CustomRenderer';
 import Debugger from './entities/Debugger';
 import GameScene from './scenes/GameScene';
+import CustomCamera from './entities/CustomCamera';
 
 if (process.env.DEBUG === 'true') {
 	console.log('loaded esbuild watch listener');
@@ -12,11 +13,10 @@ if (process.env.DEBUG === 'true') {
 export default class App {
 	public currentScene: GameScene;
 	public renderer: CustomRenderer;
-	public camera: THREE.PerspectiveCamera;
+	public camera: CustomCamera;
 	public clock: THREE.Clock;
 	public debugger: Debugger;
 	public keysPressed: {} = {};
-
 	constructor() {
 		this.clock = new THREE.Clock();
 		this.init();
@@ -24,7 +24,7 @@ export default class App {
 
 	private init() {
 		this.renderer = new CustomRenderer(this);
-		this.setupCamera();
+		this.camera = new CustomCamera(this);
 		this.setupAnimationLoop();
 		this.setupResizeListener();
 		this.startScene();
@@ -41,16 +41,6 @@ export default class App {
 			this.keysPressed[event.key.toLowerCase()] = false;
 		});
 	}
-	private setupCamera() {
-		this.camera = new THREE.PerspectiveCamera(
-			75,
-			window.innerWidth / window.innerHeight,
-			0.1,
-			1000
-		);
-		this.camera.position.z = -5;
-		this.camera.lookAt(0, 0, 0);
-	}
 
 	private setupAnimationLoop() {
 		this.renderer.setAnimationLoop(this.loop.bind(this));
@@ -58,11 +48,10 @@ export default class App {
 
 	private loop() {
 		const delta = this.clock.getDelta();
-
+		this.camera.update();
 		if (this.currentScene) this.currentScene.loop(delta);
 		if (this.debugger) this.debugger.stats.update();
 		this.renderer.composer.render();
-		// this.renderer.render(this.currentScene, this.camera);
 	}
 
 	private startScene() {

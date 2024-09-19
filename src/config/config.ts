@@ -16,4 +16,11 @@ export const CONFIG = {
 	BACKGROUND: {
 		MOVEMENT_SPEED: 1,
 	},
+	OBSTACLES: {
+		MAX_Z_ROTATION: 0.01,
+		COLORS: [0xff0000, 0x00ff00, 0x0000ff],
+	},
+	CAMERA: {
+		LERP_SPEED: 0.03,
+	},
 };

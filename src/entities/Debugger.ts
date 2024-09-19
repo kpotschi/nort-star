@@ -3,14 +3,19 @@ import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import App from '../app';
 import { CONFIG } from '../config/config';
+import * as THREE from 'three';
+import Spaceship from './Spaceship';
 
 export default class Debugger extends GUI {
 	private app: App;
 	public stats: Stats;
+	private controls: OrbitControls;
+	private spaceship: Spaceship;
 
 	constructor(app: App) {
 		super();
 		this.app = app;
+		this.spaceship = app.currentScene.spaceship;
 		this.addStats();
 		this.init();
 	}
@@ -21,6 +26,45 @@ export default class Debugger extends GUI {
 	}
 
 	private init() {
+		// this.initControls();
+		this.initGui();
+		// this.initDirection();
+	}
+	private initControls() {
+		this.controls = new OrbitControls(
+			this.app.camera,
+			this.app.renderer.domElement
+		);
+	}
+
+	private initDirection() {
+		// const shipDirection = this.spaceship.direction;
+
+		const origin = new THREE.Vector3(0, 0, 0);
+		const length = 3;
+
+		const x = new THREE.ArrowHelper(
+			new THREE.Vector3(1, 0, 0),
+			origin,
+			length,
+			0xffff00
+		);
+
+		const y = new THREE.ArrowHelper(
+			new THREE.Vector3(0, 1, 0),
+			origin,
+			length,
+			0xff0000
+		);
+		const z = new THREE.ArrowHelper(
+			new THREE.Vector3(0, 0, 1),
+			origin,
+			length,
+			0x00ff00
+		);
+		this.app.currentScene.add(x, y, z);
+	}
+	private initGui() {
 		const bloomFolder = this.addFolder('bloom');
 
 		bloomFolder
@@ -48,10 +92,5 @@ export default class Debugger extends GUI {
 			.onChange((value) => {
 				this.app.renderer.toneMappingExposure = Math.pow(value, 4.0);
 			});
-
-		const controls = new OrbitControls(
-			this.app.camera,
-			this.app.renderer.domElement
-		);
 	}
 }

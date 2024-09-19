@@ -6,6 +6,7 @@ export default class Spaceship extends THREE.Mesh {
 	private scene: GameScene;
 	private _velocityX: number = 0;
 	private _velocityY: number = 0;
+	public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
 
 	constructor(scene: GameScene) {
 		const material = Spaceship.getMaterial();
@@ -34,8 +35,8 @@ export default class Spaceship extends THREE.Mesh {
 	static getMaterial(): THREE.Material {
 		return new THREE.MeshStandardMaterial({
 			color: 0x00ff00,
-			metalness: 0.3, // Make it interact with light properly
-			roughness: 0.03, // Shiny appearance
+			metalness: 0.1, // Make it interact with light properly
+			roughness: 0.3, // Shiny appearance
 			// side: THREE.DoubleSide, // Render both sides of the faces
 		});
 	}
@@ -125,73 +126,64 @@ export default class Spaceship extends THREE.Mesh {
 	}
 
 	public move(delta: number) {
-		this.rotation.x = (this.velocityX * Math.PI) / 4;
-		this.rotation.y = (this.velocityY * Math.PI) / 4;
-
 		if (this.scene.app.keysPressed['w']) {
-			this.velocityX += CONFIG.CONTROLS.ROTATION_SPEED;
+			this.rotateOnAxis(
+				new THREE.Vector3(1, 0, 0),
+				CONFIG.CONTROLS.ROTATION_SPEED
+			);
 		}
 		if (this.scene.app.keysPressed['s']) {
-			this.velocityX -= CONFIG.CONTROLS.ROTATION_SPEED;
-		}
-
-		if (!this.scene.app.keysPressed['w'] && !this.scene.app.keysPressed['s']) {
-			this.velocityX = THREE.MathUtils.lerp(
-				this.velocityX,
-				0,
-				CONFIG.CONTROLS.ROTATION_RETURN_SPEED
+			this.rotateOnAxis(
+				new THREE.Vector3(-1, 0, 0),
+				CONFIG.CONTROLS.ROTATION_SPEED
 			);
 		}
+
+		// if (!this.scene.app.keysPressed['w'] && !this.scene.app.keysPressed['s']) {
+		// 	this.velocityX = THREE.MathUtils.lerp(
+		// 		this.velocityX,
+		// 		0,
+		// 		CONFIG.CONTROLS.ROTATION_RETURN_SPEED
+		// 	);
+		// }
 
 		if (this.scene.app.keysPressed['a']) {
-			this.velocityY += CONFIG.CONTROLS.ROTATION_SPEED;
-		}
-		if (this.scene.app.keysPressed['d']) {
-			this.velocityY -= CONFIG.CONTROLS.ROTATION_SPEED;
-		}
-
-		if (!this.scene.app.keysPressed['a'] && !this.scene.app.keysPressed['d']) {
-			this.velocityY = THREE.MathUtils.lerp(
-				this.velocityY,
-				0,
-				CONFIG.CONTROLS.ROTATION_RETURN_SPEED
+			this.rotateOnAxis(
+				new THREE.Vector3(0, 1, 0),
+				CONFIG.CONTROLS.ROTATION_SPEED
 			);
 		}
-		// this.rotation.x = Math.max(
-		// 	this.rotation.x - CONFIG.CONTROLS.ROTATION_SPEED * delta,
-		// 	-CONFIG.CONTROLS.MAX_ROTATION
-		// );
-		// } else if (this.scene.app.keysPressed['s']) {
-		// 	this.rotation.x = Math.min(
-		// 		this.rotation.x + CONFIG.CONTROLS.ROTATION_SPEED * delta,
-		// 		CONFIG.CONTROLS.MAX_ROTATION
-		// 	);
-		// } else {
-		// 	this.rotation.x = THREE.MathUtils.lerp(
-		// 		this.rotation.x,
+		if (this.scene.app.keysPressed['d']) {
+			this.rotateOnAxis(
+				new THREE.Vector3(0, -1, 0),
+				CONFIG.CONTROLS.ROTATION_SPEED
+			);
+		}
+
+		// if (!this.scene.app.keysPressed['a'] && !this.scene.app.keysPressed['d']) {
+		// 	this.velocityY = THREE.MathUtils.lerp(
+		// 		this.velocityY,
 		// 		0,
 		// 		CONFIG.CONTROLS.ROTATION_RETURN_SPEED
 		// 	);
 		// }
 
-		// if (this.scene.app.keysPressed['a']) {
-		// 	this.rotation.y = THREE.MathUtils.clamp(
-		// 		this.rotation.y + CONFIG.CONTROLS.ROTATION_SPEED * delta,
-		// 		-CONFIG.CONTROLS.MAX_ROTATION,
-		// 		CONFIG.CONTROLS.MAX_ROTATION
-		// 	);
-		// } else if (this.scene.app.keysPressed['d']) {
-		// 	this.rotation.y = THREE.MathUtils.clamp(
-		// 		this.rotation.y - CONFIG.CONTROLS.ROTATION_SPEED * delta,
-		// 		-CONFIG.CONTROLS.MAX_ROTATION,
-		// 		CONFIG.CONTROLS.MAX_ROTATION
-		// 	);
-		// } else {
-		// 	this.rotation.y = THREE.MathUtils.lerp(
-		// 		this.rotation.y,
-		// 		0,
-		// 		CONFIG.CONTROLS.ROTATION_RETURN_SPEED
-		// 	);
-		// }
+		// this.updateDirection();
+	}
+
+	private updateDirection() {
+		// Default forward direction is along the negative Z-axis
+		const forward = new THREE.Vector3(0, 0, -1);
+
+		// Apply the spaceship's current rotation (using quaternion) to the forward vector
+		forward.applyQuaternion(this.quaternion);
+
+		// Normalize the resulting vector to make sure it's a unit vector
+		forward.normalize();
+
+		// Update the spaceship's direction vector
+		this.direction.copy(forward);
+
+		console.log(this.direction);
 	}
 }
