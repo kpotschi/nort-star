@@ -1,11 +1,10 @@
-import { MyRoomState } from './../../server/src/rooms/schema/MyRoomState';
 import * as THREE from 'three';
 import CustomRenderer from './entities/CustomRenderer';
 import Debugger from './entities/Debugger';
 import GameScene from './scenes/GameScene';
 import CustomCamera from './entities/CustomCamera';
 import { Client, Room } from 'colyseus.js';
-
+import { State } from '../../server/src/rooms/schema/MyRoomState';
 if (process.env.DEBUG === 'true') {
 	console.log('loaded esbuild watch listener');
 	new EventSource('/esbuild').addEventListener('change', () =>
@@ -20,7 +19,7 @@ export default class App {
 	public debugger: Debugger;
 	public keysPressed: {} = {};
 	private client: Client;
-	private room: Room;
+	public room: Room;
 	public overlay: HTMLElement;
 
 	constructor() {
@@ -37,10 +36,16 @@ export default class App {
 		this.createControls();
 		this.addText();
 		await this.client
-			.joinOrCreate<MyRoomState>('my_room')
-			.then((room: Room<MyRoomState>) => {
+			.joinOrCreate<State>('my_room')
+			.then((room: Room<State>) => {
+				room.state.players.onAdd((player, sessionId) => {
+					console.log('Player added!', player, sessionId);
+				});
+
 				this.overlay.innerText = 'WAITING FOR OPPONENT...';
 				this.room = room;
+				this.currentScene.init();
+				this.setUpStartListener();
 			})
 			.catch((error) => {
 				this.overlay.innerText = error;
@@ -48,14 +53,13 @@ export default class App {
 		this.renderer.setupRenderPasses();
 		this.renderer.setAnimationLoop(this.loop.bind(this));
 		this.setupDebugger();
-		this.currentScene.init();
-		// room.state.players.onAdd((player, sessionId) => {
-		// 	console.log('Player added!', player, sessionId);
-		// 	// on player "position" change
-		// 	player.listen('position', (position, previousPosition) => {
-		// 		console.log('player position changed!', { position, previousPosition });
-		// 	});
-		// });
+	}
+
+	private setUpStartListener() {
+		this.room.onMessage('start', (message) => {
+			console.log(message.message); // "Game is starting!"
+			this.currentScene.startGame();
+		});
 	}
 
 	private addText() {
@@ -80,10 +84,6 @@ export default class App {
 		if (this.currentScene) this.currentScene.loop(delta);
 		if (this.debugger) this.debugger.stats.update();
 		this.renderer.composer.render();
-	}
-
-	private startScene() {
-		this.currentScene = new GameScene(this);
 	}
 
 	private setupResizeListener() {

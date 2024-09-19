@@ -4,9 +4,10 @@ import * as THREE from 'three';
 
 export default class Spaceship extends THREE.Mesh {
 	private scene: GameScene;
-	private _velocityX: number = 0;
-	private _velocityY: number = 0;
+	// private _velocityX: number = 0;
+	// private _velocityY: number = 0;
 	public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
+	public speed: number = 0; // Constant speed for flying forward
 
 	constructor(scene: GameScene) {
 		const material = Spaceship.getMaterial();
@@ -17,20 +18,20 @@ export default class Spaceship extends THREE.Mesh {
 		this.scene.add(this);
 	}
 
-	get velocityX() {
-		return this._velocityX;
-	}
-	get velocityY() {
-		return this._velocityY;
-	}
+	// get velocityX() {
+	// 	return this._velocityX;
+	// }
+	// get velocityY() {
+	// 	return this._velocityY;
+	// }
 
-	set velocityX(x: number) {
-		this._velocityX = THREE.MathUtils.clamp(x, -Math.PI / 4, Math.PI / 4);
-	}
-	a;
-	set velocityY(y: number) {
-		this._velocityY = THREE.MathUtils.clamp(y, -Math.PI / 4, Math.PI / 4);
-	}
+	// set velocityX(x: number) {
+	// 	this._velocityX = THREE.MathUtils.clamp(x, -Math.PI / 4, Math.PI / 4);
+	// }
+
+	// set velocityY(y: number) {
+	// 	this._velocityY = THREE.MathUtils.clamp(y, -Math.PI / 4, Math.PI / 4);
+	// }
 
 	static getMaterial(): THREE.Material {
 		return new THREE.MeshStandardMaterial({
@@ -126,38 +127,42 @@ export default class Spaceship extends THREE.Mesh {
 	}
 
 	public move(delta: number) {
+		// Handle rotation based on input keys
 		if (this.scene.app.keysPressed['w']) {
 			this.rotateOnAxis(
 				new THREE.Vector3(1, 0, 0),
-				CONFIG.CONTROLS.ROTATION_SPEED
+				CONFIG.CONTROLS.ROTATION_SPEED * delta
 			);
 		}
 		if (this.scene.app.keysPressed['s']) {
 			this.rotateOnAxis(
 				new THREE.Vector3(-1, 0, 0),
-				CONFIG.CONTROLS.ROTATION_SPEED
+				CONFIG.CONTROLS.ROTATION_SPEED * delta
 			);
 		}
-
-		// if (!this.scene.app.keysPressed['w'] && !this.scene.app.keysPressed['s']) {
-		// 	this.velocityX = THREE.MathUtils.lerp(
-		// 		this.velocityX,
-		// 		0,
-		// 		CONFIG.CONTROLS.ROTATION_RETURN_SPEED
-		// 	);
-		// }
 
 		if (this.scene.app.keysPressed['a']) {
 			this.rotateOnAxis(
 				new THREE.Vector3(0, 1, 0),
-				CONFIG.CONTROLS.ROTATION_SPEED
+				CONFIG.CONTROLS.ROTATION_SPEED * delta
 			);
 		}
 		if (this.scene.app.keysPressed['d']) {
 			this.rotateOnAxis(
 				new THREE.Vector3(0, -1, 0),
-				CONFIG.CONTROLS.ROTATION_SPEED
+				CONFIG.CONTROLS.ROTATION_SPEED * delta
 			);
 		}
+
+		// Update the direction based on the ship's current orientation
+		this.direction = new THREE.Vector3(0, 0, 1)
+			.applyQuaternion(this.quaternion)
+			.normalize();
+
+		// Move forward in the direction the spaceship is facing
+		const forwardMovement = this.direction
+			.clone()
+			.multiplyScalar(this.speed * delta);
+		this.position.add(forwardMovement);
 	}
 }

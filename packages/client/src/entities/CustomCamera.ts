@@ -8,7 +8,7 @@ export default class CustomCamera extends THREE.PerspectiveCamera {
 	private lerpSpeed: number; // Speed of lerp
 
 	constructor(app: App) {
-		super(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+		super(75, window.innerWidth / window.innerHeight, 0.1, 1000); // FOV, aspect, near, far planes
 		this.app = app;
 
 		// Define a tail offset relative to the spaceship (behind the spaceship)
@@ -18,32 +18,35 @@ export default class CustomCamera extends THREE.PerspectiveCamera {
 		this.position.set(0, 2, -10);
 
 		// Set a lerp speed (the higher, the faster the interpolation)
-		this.lerpSpeed = CONFIG.CAMERA.LERP_SPEED; // Adjust to make the lerp faster or slower
+		this.lerpSpeed = CONFIG.CAMERA.LERP_SPEED || 0.1; // Default if undefined
 	}
 
 	public update() {
 		if (this.app.currentScene?.spaceship) {
 			const spaceship = this.app.currentScene.spaceship;
 
-			const offset = this.tailOffset.clone();
-
-			offset.applyQuaternion(spaceship.quaternion);
-
+			// Calculate the target position behind the spaceship
+			const offset = this.tailOffset
+				.clone()
+				.applyQuaternion(spaceship.quaternion); // Tail offset relative to spaceship's rotation
 			const targetPosition = spaceship.position.clone().add(offset);
 
+			// Interpolate (lerp) between current and target position
 			this.position.lerp(targetPosition, this.lerpSpeed);
 
+			// Calculate spaceship's local up direction for camera alignment
 			const localUp = new THREE.Vector3(0, 1, 0).applyQuaternion(
 				spaceship.quaternion
 			);
-
 			this.up.copy(localUp);
 
+			// Calculate forward direction to look at
 			const forwardDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(
 				spaceship.quaternion
 			);
 			const lookAtPosition = spaceship.position.clone().add(forwardDirection);
 
+			// Smoothly interpolate the camera's orientation using slerp
 			const targetQuaternion = new THREE.Quaternion().setFromRotationMatrix(
 				new THREE.Matrix4().lookAt(this.position, lookAtPosition, localUp)
 			);
