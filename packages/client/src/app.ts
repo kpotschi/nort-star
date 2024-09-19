@@ -1,8 +1,10 @@
+import { MyRoomState } from './../../server/src/rooms/schema/MyRoomState';
 import * as THREE from 'three';
 import CustomRenderer from './entities/CustomRenderer';
 import Debugger from './entities/Debugger';
 import GameScene from './scenes/GameScene';
 import CustomCamera from './entities/CustomCamera';
+import { Client, Room } from 'colyseus.js';
 
 if (process.env.DEBUG === 'true') {
 	console.log('loaded esbuild watch listener');
@@ -17,20 +19,50 @@ export default class App {
 	public clock: THREE.Clock;
 	public debugger: Debugger;
 	public keysPressed: {} = {};
+	private client: Client;
+	private room: Room;
+	public overlay: HTMLElement;
+
 	constructor() {
 		this.clock = new THREE.Clock();
 		this.init();
 	}
 
-	private init() {
-		this.renderer = new CustomRenderer(this);
+	private async init() {
+		this.client = new Client('http://localhost:2567');
 		this.camera = new CustomCamera(this);
-		this.setupAnimationLoop();
+		this.renderer = new CustomRenderer(this);
+		this.currentScene = new GameScene(this);
 		this.setupResizeListener();
-		this.startScene();
-		this.renderer.setupRenderPasses();
 		this.createControls();
+		this.addText();
+		await this.client
+			.joinOrCreate<MyRoomState>('my_room')
+			.then((room: Room<MyRoomState>) => {
+				this.overlay.innerText = 'WAITING FOR OPPONENT...';
+				this.room = room;
+			})
+			.catch((error) => {
+				this.overlay.innerText = error;
+			});
+		this.renderer.setupRenderPasses();
+		this.renderer.setAnimationLoop(this.loop.bind(this));
 		this.setupDebugger();
+		this.currentScene.init();
+		// room.state.players.onAdd((player, sessionId) => {
+		// 	console.log('Player added!', player, sessionId);
+		// 	// on player "position" change
+		// 	player.listen('position', (position, previousPosition) => {
+		// 		console.log('player position changed!', { position, previousPosition });
+		// 	});
+		// });
+	}
+
+	private addText() {
+		this.overlay = document.createElement('div');
+		this.overlay.innerText = 'JOINING ROOM..';
+		this.overlay.id = 'overlay';
+		document.body.append(this.overlay);
 	}
 
 	private createControls() {
@@ -40,10 +72,6 @@ export default class App {
 		window.addEventListener('keyup', (event) => {
 			this.keysPressed[event.key.toLowerCase()] = false;
 		});
-	}
-
-	private setupAnimationLoop() {
-		this.renderer.setAnimationLoop(this.loop.bind(this));
 	}
 
 	private loop() {

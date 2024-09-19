@@ -13,8 +13,8 @@ export default class Sun extends THREE.Object3D {
 
 		this.time = 0;
 
-		const sunGeometry = new THREE.SphereGeometry(1, 16, 16);
-		const sunMaterial = new THREE.MeshPhongMaterial({
+		const sunGeometry = new THREE.SphereGeometry(30, 16, 16);
+		const sunMaterial = new THREE.MeshStandardMaterial({
 			color: 0xffff00,
 			emissive: 0xffff00,
 			emissiveIntensity: 1,
@@ -23,22 +23,21 @@ export default class Sun extends THREE.Object3D {
 		this.sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
 		this.add(this.sunMesh);
 
-		this.sunLight = new THREE.PointLight(0xffffff, 1);
+		this.sunLight = new THREE.PointLight(0xffffff, 1, 0, 0);
 		this.sunLight.castShadow = true;
 		this.sunLight.shadow.bias = -0.01;
-
-		this.sunLight.position.set(0, 0, 0);
 
 		this.add(this.sunLight);
 
 		const helper = new THREE.PointLightHelper(this.sunLight);
-
 		this.add(helper);
 
 		this.scene.add(this);
 
-		this.position.set(-20, 20, 70);
-		this.lookAt(0, 0, 0);
+		this.sunMesh.position.set(-150, 150, 500);
+		this.sunLight.position.set(-150, 150, 500);
+
+		// this.lookAt(0, 0, 0);
 	}
 
 	public update(deltaTime: number) {

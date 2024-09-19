@@ -27,7 +27,7 @@ export default class Spaceship extends THREE.Mesh {
 	set velocityX(x: number) {
 		this._velocityX = THREE.MathUtils.clamp(x, -Math.PI / 4, Math.PI / 4);
 	}
-
+	a;
 	set velocityY(y: number) {
 		this._velocityY = THREE.MathUtils.clamp(y, -Math.PI / 4, Math.PI / 4);
 	}
@@ -35,8 +35,8 @@ export default class Spaceship extends THREE.Mesh {
 	static getMaterial(): THREE.Material {
 		return new THREE.MeshStandardMaterial({
 			color: 0x00ff00,
-			metalness: 0.1, // Make it interact with light properly
-			roughness: 0.3, // Shiny appearance
+			metalness: 0, // Make it interact with light properly
+			roughness: 0.1, // Shiny appearance
 			// side: THREE.DoubleSide, // Render both sides of the faces
 		});
 	}
@@ -159,31 +159,5 @@ export default class Spaceship extends THREE.Mesh {
 				CONFIG.CONTROLS.ROTATION_SPEED
 			);
 		}
-
-		// if (!this.scene.app.keysPressed['a'] && !this.scene.app.keysPressed['d']) {
-		// 	this.velocityY = THREE.MathUtils.lerp(
-		// 		this.velocityY,
-		// 		0,
-		// 		CONFIG.CONTROLS.ROTATION_RETURN_SPEED
-		// 	);
-		// }
-
-		// this.updateDirection();
-	}
-
-	private updateDirection() {
-		// Default forward direction is along the negative Z-axis
-		const forward = new THREE.Vector3(0, 0, -1);
-
-		// Apply the spaceship's current rotation (using quaternion) to the forward vector
-		forward.applyQuaternion(this.quaternion);
-
-		// Normalize the resulting vector to make sure it's a unit vector
-		forward.normalize();
-
-		// Update the spaceship's direction vector
-		this.direction.copy(forward);
-
-		console.log(this.direction);
 	}
 }

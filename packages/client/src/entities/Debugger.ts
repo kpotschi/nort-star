@@ -15,7 +15,7 @@ export default class Debugger extends GUI {
 	constructor(app: App) {
 		super();
 		this.app = app;
-		this.spaceship = app.currentScene.spaceship;
+		// this.spaceship = app.currentScene.spaceship;
 		this.addStats();
 		this.init();
 	}

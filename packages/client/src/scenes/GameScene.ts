@@ -5,6 +5,8 @@ import Spaceship from '../entities/Spaceship';
 import Obstacle from '../entities/obstacles/Obstacle';
 import Ring from '../entities/obstacles/Ring';
 import Sun from '../entities/Sun';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 export default class GameScene extends THREE.Scene {
 	private backgroundStars: BackgroundStars;
@@ -13,34 +15,16 @@ export default class GameScene extends THREE.Scene {
 	private pointLight: THREE.PointLight;
 	private obstacles: Obstacle[];
 	private sun: Sun;
+	private overlay: HTMLElement;
 
 	constructor(app: App) {
 		super();
 		this.app = app;
-		this.init();
 	}
 
-	private init() {
+	public init() {
 		this.createBackground();
 		this.createLighting();
-
-		this.spaceship = new Spaceship(this);
-
-		this.obstacles = [];
-
-		for (let i = 0; i < 10; i++) {
-			this.obstacles.push(new Ring(this, i));
-		}
-		this.sun = new Sun(this);
-		// const geometry = new THREE.BoxGeometry();
-		// const material = new THREE.MeshStandardMaterial({
-		// 	color: 0x00ff00,
-		// 	metalness: 0.5, // Make sure the material interacts with light
-		// 	roughness: 0.1, // Lower roughness to make it shinier
-		// });
-		// const cube = new THREE.Mesh(geometry, material);
-		// cube.position.set(3, 0, 0);
-		// this.add(cube);
 	}
 
 	private createLighting() {
@@ -48,13 +32,13 @@ export default class GameScene extends THREE.Scene {
 	}
 
 	private createBackground() {
-		// this.backgroundStars = new BackgroundStars(this);
+		this.backgroundStars = new BackgroundStars(this);
 	}
 
 	public loop(delta: number) {
-		// this.backgroundStars.move(delta);
-		this.spaceship.move(delta);
-		this.obstacles.forEach((obs: Obstacle) => obs.update());
-		this.sun.update(delta);
+		this.backgroundStars.move(delta);
+		// this.spaceship.move(delta);
+		// this.obstacles.forEach((obs: Obstacle) => obs.update());
+		// this.sun.update(delta);
 	}
 }

@@ -3,7 +3,7 @@ export const CONFIG = {
 	RENDER: {
 		PASS: {
 			THRESHOLD: 0,
-			STRENGTH: 1,
+			STRENGTH: 0.5,
 			RADIUS: 0,
 			EXPOSURE: 1,
 		},
@@ -14,7 +14,7 @@ export const CONFIG = {
 		ROTATION_RETURN_SPEED: 0.01,
 	},
 	BACKGROUND: {
-		MOVEMENT_SPEED: 1,
+		ROTATION_SPEED: 0.03,
 	},
 	OBSTACLES: {
 		MAX_Z_ROTATION: 0.01,

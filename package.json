@@ -1,18 +1,23 @@
 {
-	"name": "phaser-esbuild-template",
-	"devDependencies": {
-		"@types/node": "^22.5.5",
-		"@types/three": "^0.168.0",
-		"esbuild": "^0.23.1",
-		"esbuild-plugin-copy": "^2.1.1"
-	},
-	"type": "module",
+	"name": "nort-star",
+	"version": "1.0.0",
+	"workspaces": [
+		"packages/*"
+	],
+	"description": "nort-star world",
 	"scripts": {
-		"start": "DEBUG=true node scripts/esbuild.start.js",
-		"build": "rm -rf ./dist && node scripts/esbuild.config.js"
+		"start": "concurrently  \"yarn workspace nort-star-server tsx watch src/index.ts\" \"yarn workspace nort-star-client start\" \"yarn workspace nort-star-client start\""
 	},
-	"packageManager": "yarn@4.5.0",
-	"dependencies": {
-		"three": "^0.168.0"
-	}
+	"license": "UNLICENSED",
+	"author": "Kevin Potschien <kpotschien@gmail.com>",
+	"private": true,
+	"devDependencies": {
+		"@lerna-lite/cli": "^3.5.1",
+		"@lerna-lite/core": "^3.5.1",
+		"@lerna-lite/publish": "^3.5.2",
+		"@lerna-lite/run": "^3.5.1",
+		"@lerna-lite/version": "^3.5.2",
+		"concurrently": "^9.0.1"
+	},
+	"packageManager": "yarn@4.5.0"
 }

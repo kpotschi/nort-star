@@ -3,14 +3,14 @@ import { copy } from 'esbuild-plugin-copy';
 
 const context = await esbuild.context({
 	logLevel: 'info',
-	entryPoints: ['src/app.ts', 'src/index.html'],
+	entryPoints: ['src/app.ts', 'src/index.html', 'src/styles.css'],
 	bundle: true,
 	outdir: 'dist',
 	sourcemap: true,
 	platform: 'browser',
 	loader: {
 		'.html': 'copy',
-		// '.png': 'file',
+		'.css': 'copy',
 	},
 	format: 'esm',
 	define: {

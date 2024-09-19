@@ -1,0 +1,19 @@
+{
+	"name": "nort-star-client",
+	"devDependencies": {
+		"@types/node": "^22.5.5",
+		"@types/three": "^0.168.0",
+		"esbuild": "^0.23.1",
+		"esbuild-plugin-copy": "^2.1.1"
+	},
+	"type": "module",
+	"scripts": {
+		"start": "rm -rf ./dist && DEBUG=true node scripts/esbuild.start.js",
+		"build": "rm -rf ./dist && node scripts/esbuild.config.js"
+	},
+	"packageManager": "yarn@4.5.0",
+	"dependencies": {
+		"colyseus.js": "^0.15.26",
+		"three": "^0.168.0"
+	}
+}

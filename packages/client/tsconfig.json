@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"target": "ES2017", // or "ES2020", "ESNext" for modern JavaScript
+		"module": "ESNext", // Output ES modules for the browser
+		"moduleResolution": "node", // Node module resolution for dependencies
+		"esModuleInterop": true, // Ensures compatibility with CommonJS modules
+		"skipLibCheck": true, // Skips type checks on declaration files
+		"forceConsistentCasingInFileNames": true,
+		"strictNullChecks": false
+	},
+	"include": ["src/**/*"]
+}
