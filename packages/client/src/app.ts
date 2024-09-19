@@ -5,6 +5,7 @@ import GameScene from './scenes/GameScene';
 import CustomCamera from './entities/CustomCamera';
 import { Client, Room } from 'colyseus.js';
 import { State } from '../../server/src/rooms/schema/MyRoomState';
+import { UiManager } from './entities/UiManager';
 if (process.env.DEBUG === 'true') {
 	console.log('loaded esbuild watch listener');
 	new EventSource('/esbuild').addEventListener('change', () =>
@@ -15,6 +16,7 @@ export default class App {
 	public currentScene: GameScene;
 	public renderer: CustomRenderer;
 	public camera: CustomCamera;
+	public ui: UiManager;
 	public clock: THREE.Clock;
 	public debugger: Debugger;
 	public keysPressed: {} = {};
@@ -34,7 +36,7 @@ export default class App {
 		this.currentScene = new GameScene(this);
 		this.setupResizeListener();
 		this.createControls();
-		this.addText();
+		this.ui = new UiManager(this);
 		await this.client
 			.joinOrCreate<State>('my_room')
 			.then((room: Room<State>) => {
