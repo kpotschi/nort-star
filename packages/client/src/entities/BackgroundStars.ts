@@ -56,16 +56,14 @@ export default class BackgroundStars {
 
 	public move(delta: number) {
 		// Ensure stars exist
-		if (this.stars) {
-			// Set the rotation speed for the starlapse effect
-			const rotationSpeed = CONFIG.BACKGROUND.ROTATION_SPEED * delta;
-
-			// Apply rotation to the entire star field around the Y-axis (vertical axis)
-			this.stars.rotation.y += rotationSpeed; // Rotate around the Y-axis
-
-			// Optionally, you can rotate around other axes for different effects:
-			this.stars.rotation.x += rotationSpeed; // Rotate around the X-axis
-			// this.stars.rotation.z += rotationSpeed; // Rotate around the Z-axis
-		}
+		// if (this.stars) {
+		// 	// Set the rotation speed for the starlapse effect
+		// 	const rotationSpeed = CONFIG.BACKGROUND.ROTATION_SPEED * delta;
+		// 	// Apply rotation to the entire star field around the Y-axis (vertical axis)
+		// 	this.stars.rotation.y += rotationSpeed; // Rotate around the Y-axis
+		// 	// Optionally, you can rotate around other axes for different effects:
+		// 	this.stars.rotation.x += rotationSpeed; // Rotate around the X-axis
+		// 	// this.stars.rotation.z += rotationSpeed; // Rotate around the Z-axis
+		// }
 	}
 }

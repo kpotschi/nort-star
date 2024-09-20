@@ -6,17 +6,13 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import App from '../app';
 import { CONFIG } from '../config/config';
 
-export default class CustomRenderer extends THREE.WebGLRenderer {
+export default class RenderManager extends THREE.WebGLRenderer {
 	private app: App;
 	public composer: EffectComposer;
 	public bloomPass: UnrealBloomPass;
 	constructor(app: App) {
 		super();
 		this.app = app;
-		this.init();
-	}
-
-	private init() {
 		this.setupDom();
 	}
 

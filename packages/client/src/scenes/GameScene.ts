@@ -4,15 +4,20 @@ import App from '../app';
 import Spaceship from '../entities/Spaceship';
 import Obstacle from '../entities/obstacles/Obstacle';
 import Sun from '../entities/Sun';
+import PlayerShip from '../entities/PlayerShip';
+import { Room } from 'colyseus.js';
+import { Player, State } from '../../../server/src/rooms/schema/MyRoomState';
+import { Spawn } from '../config/types';
 
 export default class GameScene extends THREE.Scene {
 	private backgroundStars: BackgroundStars;
 	public app: App;
-	public spaceship: Spaceship | null = null; // Local player's spaceship
-	public opponentSpaceships: { [id: string]: Spaceship } = {}; // Opponent spaceships
+	public spaceship: PlayerShip | null = null;
+	public opponentSpaceships: { [id: string]: Spaceship } = {};
 	private pointLight: THREE.PointLight;
 	private obstacles: Obstacle[];
 	private sun: Sun;
+	public room: Room<State>;
 
 	constructor(app: App) {
 		super();
@@ -22,26 +27,13 @@ export default class GameScene extends THREE.Scene {
 	public init() {
 		this.createBackground();
 		this.createLighting();
+		this.room = this.app.client.room;
 	}
 
 	public startGame() {
-		this.app.overlay.style.display = 'none';
+		this.app.ui.unsetWarning();
 
-		// Iterate through the players in the room and create a spaceship for each
-		this.app.room.state.players.forEach((player: any, id: string) => {
-			if (id === this.app.room.sessionId) {
-				// If this is the local player's spaceship
-				this.spaceship = new Spaceship(this);
-				console.log(`Created spaceship for local player: ${id}`);
-			} else {
-				// For opponents
-				const opponentSpaceship = new Spaceship(this);
-				this.opponentSpaceships[id] = opponentSpaceship;
-				console.log(`Created spaceship for opponent player: ${id}`);
-			}
-		});
-
-		console.log('Game started with spaceships for all players.');
+		this.app.client.setupPositionListener();
 	}
 
 	private createLighting() {
@@ -52,31 +44,36 @@ export default class GameScene extends THREE.Scene {
 		this.backgroundStars = new BackgroundStars(this);
 	}
 
-	public loop(delta: number) {
-		this.backgroundStars.move(delta);
+	public spawnSelf(spawn: Spawn) {
+		this.spaceship = new PlayerShip(this, spawn);
+	}
 
-		// Update local player's spaceship
+	public spawnOpponent(id: string, player: Player) {
+		const opponentSpaceship = new Spaceship(this, player);
+		this.opponentSpaceships[id] = opponentSpaceship;
+		console.log(`Created spaceship for opponent player: ${id}`);
+	}
+
+	public loop(delta: number) {
+		// this.backgroundStars && this.backgroundStars.move(delta);
+		// // Update local player's spaceship
 		if (this.spaceship) {
 			this.spaceship.move(delta);
-
-			// Send local player's position to the server
-			this.app.room.send('move', this.spaceship.position);
 		}
-
-		// Update opponent spaceships (positions should come from the server)
-		for (const id in this.opponentSpaceships) {
-			const opponentSpaceship = this.opponentSpaceships[id];
-			// Assuming the opponent's position is synced from the server
-			const opponentState = this.app.room.state.players.get(id);
-			if (opponentState) {
-				opponentSpaceship.position.set(
-					opponentState.x,
-					opponentState.y,
-					opponentState.z
-				);
-			}
-			opponentSpaceship.move(delta); // Optional, depending on what "move" does
-		}
+		// // Update opponent spaceships (positions should come from the server)
+		// for (const id in this.opponentSpaceships) {
+		// 	const opponentSpaceship = this.opponentSpaceships[id];
+		// 	// Assuming the opponent's position is synced from the server
+		// 	const opponentState = this.room.state.players.get(id);
+		// 	if (opponentState) {
+		// 		opponentSpaceship.position.set(
+		// 			opponentState.x,
+		// 			opponentState.y,
+		// 			opponentState.z
+		// 		);
+		// 	}
+		// 	// opponentSpaceship.move(delta); // Optional, depending on what "move" does
+		// }
 	}
 
 	// Remove a spaceship when an opponent leaves

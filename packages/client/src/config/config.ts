@@ -1,5 +1,7 @@
 export const CONFIG = {
-	GAMEPLAY: {},
+	GAMEPLAY: {
+		START_SPEED: 10,
+	},
 	RENDER: {
 		PASS: {
 			THRESHOLD: 0,
@@ -9,7 +11,7 @@ export const CONFIG = {
 		},
 	},
 	CONTROLS: {
-		ROTATION_SPEED: 0.01,
+		ROTATION_SPEED: 1,
 		MAX_ROTATION: Math.PI / 4,
 		ROTATION_RETURN_SPEED: 0.01,
 	},
@@ -21,6 +23,6 @@ export const CONFIG = {
 		COLORS: [0xff0000, 0x00ff00, 0x0000ff],
 	},
 	CAMERA: {
-		LERP_SPEED: 0.03,
+		LERP_SPEED: 0.1,
 	},
 };

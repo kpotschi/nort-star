@@ -4,9 +4,9 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import App from '../app';
 import { CONFIG } from '../config/config';
 import * as THREE from 'three';
-import Spaceship from './Spaceship';
+import Spaceship from '../entities/Spaceship';
 
-export default class Debugger extends GUI {
+export default class DebugManager extends GUI {
 	private app: App;
 	public stats: Stats;
 	private controls: OrbitControls;
@@ -15,9 +15,11 @@ export default class Debugger extends GUI {
 	constructor(app: App) {
 		super();
 		this.app = app;
-		// this.spaceship = app.currentScene.spaceship;
-		this.addStats();
-		this.init();
+		if (process.env.DEBUG === 'true') {
+			this.addStats();
+			this.initGui();
+			this.initControls();
+		}
 	}
 
 	private addStats() {
@@ -25,11 +27,6 @@ export default class Debugger extends GUI {
 		this.app.renderer.domElement.appendChild(this.stats.dom);
 	}
 
-	private init() {
-		// this.initControls();
-		this.initGui();
-		// this.initDirection();
-	}
 	private initControls() {
 		this.controls = new OrbitControls(
 			this.app.camera,
@@ -64,6 +61,7 @@ export default class Debugger extends GUI {
 		);
 		this.app.currentScene.add(x, y, z);
 	}
+
 	private initGui() {
 		const bloomFolder = this.addFolder('bloom');
 
