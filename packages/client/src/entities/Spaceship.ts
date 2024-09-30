@@ -7,6 +7,8 @@ export default class Spaceship extends THREE.Mesh {
 	protected scene: GameScene;
 	public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
 	protected app: App;
+	public serverPosition: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+	public serverQ: THREE.Quaternion = new THREE.Quaternion(0, 0, 1);
 
 	constructor(scene: GameScene, spawn?: Spawn) {
 		const material = Spaceship.getMaterial();
@@ -113,5 +115,28 @@ export default class Spaceship extends THREE.Mesh {
 		geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 		geometry.computeVertexNormals();
 		return geometry;
+	}
+
+	move(delta: number) {
+		console.log(this.serverPosition);
+
+		const direction = new THREE.Vector3(0, 0, 1)
+			.applyQuaternion(this.quaternion)
+			.normalize();
+
+		const speed = 10; // You can make this configurable per player if needed
+		const forwardMovement = direction.multiplyScalar((speed * delta) / 1000); // divide delta by 1000 to convert ms to seconds
+
+		// this.position.set(forwardMovement.x, forwardMovement.y, forwardMovement.z);
+		this.position.lerp(this.serverPosition, 0.2);
+		this.quaternion.slerp(
+			new THREE.Quaternion(
+				this.serverQ.x,
+				this.serverQ.y,
+				this.serverQ.z,
+				this.serverQ.w
+			),
+			0.2
+		);
 	}
 }

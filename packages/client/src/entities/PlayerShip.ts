@@ -12,7 +12,7 @@ export default class PlayerShip extends Spaceship {
 		console.log('created playership');
 	}
 
-	public move(delta: number) {
+	public handleInput(delta: number) {
 		if (this.scene.app.controls.keysPressed['w'] === true) {
 			this.rotateOnAxis(
 				new THREE.Vector3(1, 0, 0),
@@ -52,9 +52,6 @@ export default class PlayerShip extends Spaceship {
 		const q = this.quaternion.clone().normalize();
 
 		this.scene.room.send('move', {
-			x,
-			y,
-			z,
 			qx: q.x,
 			qy: q.y,
 			qz: q.z,

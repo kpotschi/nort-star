@@ -1,0 +1,11 @@
+{
+	"$schema": "node_modules/@lerna-lite/cli/schemas/lerna-schema.json",
+	"npmClient": "yarn",
+	"version": "1.5.8",
+	"command": {
+		"version": {
+			"allowBranch": "main",
+			"message": "[skip ci] %v"
+		}
+	}
+}

@@ -13,6 +13,7 @@ import {
 import ScaleManager from './managers/ScaleManager';
 import { UiManager } from './managers/UiManager';
 import GameScene from './scenes/GameScene';
+import PlayerManager from './managers/PlayerManager';
 if (process.env.DEBUG === 'true') {
 	console.log('loaded esbuild watch listener');
 	new EventSource('/esbuild').addEventListener('change', () =>
@@ -30,6 +31,7 @@ export default class App {
 	public overlay: HTMLElement;
 	public controls: ControlsManager;
 	public scale: ScaleManager;
+	public playerManager: PlayerManager;
 
 	constructor() {
 		this.clock = new THREE.Clock();
@@ -43,7 +45,7 @@ export default class App {
 		this.renderer.setupRenderPasses();
 		this.renderer.setAnimationLoop(this.loop.bind(this));
 		this.debugger = new DebugManager(this);
-
+		this.playerManager = new PlayerManager(this);
 		this.init();
 	}
 

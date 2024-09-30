@@ -1,19 +1,15 @@
+import { Room } from 'colyseus.js';
 import * as THREE from 'three';
-import BackgroundStars from '../entities/BackgroundStars';
+import { State } from '../../../server/src/rooms/schema/MyRoomState';
 import App from '../app';
-import Spaceship from '../entities/Spaceship';
+import BackgroundStars from '../entities/BackgroundStars';
 import Obstacle from '../entities/obstacles/Obstacle';
 import Sun from '../entities/Sun';
-import PlayerShip from '../entities/PlayerShip';
-import { Room } from 'colyseus.js';
-import { Player, State } from '../../../server/src/rooms/schema/MyRoomState';
-import { Spawn } from '../config/types';
 
 export default class GameScene extends THREE.Scene {
 	private backgroundStars: BackgroundStars;
 	public app: App;
-	public spaceship: PlayerShip | null = null;
-	public opponentSpaceships: { [id: string]: Spaceship } = {};
+
 	private pointLight: THREE.PointLight;
 	private obstacles: Obstacle[];
 	private sun: Sun;
@@ -31,9 +27,8 @@ export default class GameScene extends THREE.Scene {
 	}
 
 	public startGame() {
-		this.app.ui.unsetWarning();
-
-		this.app.client.setupPositionListener();
+		// this.app.ui.unsetWarning();
+		// this.app.client.setupPositionListener();
 	}
 
 	private createLighting() {
@@ -44,22 +39,12 @@ export default class GameScene extends THREE.Scene {
 		this.backgroundStars = new BackgroundStars(this);
 	}
 
-	public spawnSelf(spawn: Spawn) {
-		this.spaceship = new PlayerShip(this, spawn);
-	}
-
-	public spawnOpponent(id: string, player: Player) {
-		const opponentSpaceship = new Spaceship(this, player);
-		this.opponentSpaceships[id] = opponentSpaceship;
-		console.log(`Created spaceship for opponent player: ${id}`);
-	}
-
 	public loop(delta: number) {
 		// this.backgroundStars && this.backgroundStars.move(delta);
 		// // Update local player's spaceship
-		if (this.spaceship) {
-			this.spaceship.move(delta);
-		}
+
+		this.app.playerManager.loop(delta);
+
 		// // Update opponent spaceships (positions should come from the server)
 		// for (const id in this.opponentSpaceships) {
 		// 	const opponentSpaceship = this.opponentSpaceships[id];
@@ -74,14 +59,5 @@ export default class GameScene extends THREE.Scene {
 		// 	}
 		// 	// opponentSpaceship.move(delta); // Optional, depending on what "move" does
 		// }
-	}
-
-	// Remove a spaceship when an opponent leaves
-	public removePlayer(id: string) {
-		if (this.opponentSpaceships[id]) {
-			this.remove(this.opponentSpaceships[id]); // Remove spaceship from scene
-			delete this.opponentSpaceships[id]; // Remove spaceship from dictionary
-			console.log(`Opponent player ${id} has left. Spaceship removed.`);
-		}
 	}
 }

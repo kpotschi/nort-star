@@ -22,8 +22,8 @@ export default class CameraManager extends THREE.PerspectiveCamera {
 	}
 
 	public update() {
-		if (this.app.currentScene?.spaceship) {
-			const spaceship = this.app.currentScene.spaceship;
+		if (this.app.playerManager.ownSpaceship) {
+			const spaceship = this.app.playerManager.ownSpaceship;
 			// Calculate the target position behind the spaceship
 			const offset = this.tailOffset
 				.clone()
