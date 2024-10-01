@@ -1,13 +1,16 @@
 import { MapSchema } from '@colyseus/schema';
 import App from '../app';
-import { Player, State } from '../../../server/src/rooms/schema/MyRoomState';
+import {
+	PlayerState,
+	State,
+} from '../../../server/src/rooms/schema/MyRoomState';
 import { Room } from 'colyseus.js';
 import Spaceship from '../entities/Spaceship';
 import PlayerShip from '../entities/PlayerShip';
 
 export default class PlayerManager {
-	private app: App;
-	private players: MapSchema<Player, string>;
+	readonly app: App;
+	private players: MapSchema<PlayerState, string>;
 	private room: Room<State>;
 	public ownSpaceship: PlayerShip | null = null;
 	public opponentSpaceships: { [id: string]: Spaceship } = {};
@@ -23,7 +26,7 @@ export default class PlayerManager {
 	}
 
 	private setupPlayerListeners() {
-		this.players.onAdd((player: Player, key: string) => {
+		this.players.onAdd((player: PlayerState, key: string) => {
 			if (this.room.sessionId !== key) {
 				this.spawnOpponent(key, player);
 			} else {
@@ -31,36 +34,29 @@ export default class PlayerManager {
 			}
 		});
 
-		this.players.onRemove((player: Player, key: string) => {
+		this.players.onRemove((player: PlayerState, key: string) => {
 			if (this.opponentSpaceships[key]) {
 				this.removeOpponent(key);
 			}
 		});
 
 		this.room.onStateChange((state: State) => {
-			state.players.forEach((player: Player, key: string) => {
-				if (this.room.sessionId !== key && this.opponentSpaceships[key]) {
-					const opponent = this.opponentSpaceships[key];
-					opponent.serverPosition.x = player.x;
-					opponent.serverPosition.y = player.y;
-					opponent.serverPosition.z = player.z;
-					opponent.serverQ.x = player.qx;
-					opponent.serverQ.y = player.qy;
-					opponent.serverQ.z = player.qz;
-					opponent.serverQ.w = player.qw;
-
-					// opponent.position.set(player.x, player.y, player.z);
-					// opponent.quaternion.set(player.qx, player.qy, player.qz, player.qw);
+			state.players.forEach((player: PlayerState, key: string) => {
+				if (this.opponentSpaceships[key]) {
+					const ship = this.opponentSpaceships[key];
+					ship.stateBuffer.add(player);
+				} else if (this.room.sessionId === key) {
+					this.ownSpaceship.stateBuffer.add(player);
 				}
 			});
 		});
 	}
 
-	private spawnSelf(player: Player) {
+	private spawnSelf(player: PlayerState) {
 		this.ownSpaceship = new PlayerShip(this.app.currentScene, player);
 	}
 
-	private spawnOpponent(key: string, player: Player) {
+	private spawnOpponent(key: string, player: PlayerState) {
 		const opponentSpaceship = new Spaceship(this.app.currentScene, player);
 		this.opponentSpaceships[key] = opponentSpaceship;
 		this.app.ui.addMessage(key + ' JOINED');
@@ -79,6 +75,7 @@ export default class PlayerManager {
 	loop(delta: number) {
 		if (this.ownSpaceship) {
 			this.ownSpaceship.handleInput(delta);
+			this.ownSpaceship.move(delta);
 		}
 
 		for (const id in this.opponentSpaceships) {

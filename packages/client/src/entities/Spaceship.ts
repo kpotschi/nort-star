@@ -1,7 +1,8 @@
-import App from '../app';
-import { Spawn } from '../config/types';
-import GameScene from '../scenes/GameScene';
 import * as THREE from 'three';
+import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
+import App from '../app';
+import StateBuffer from '../managers/StateBuffer';
+import GameScene from '../scenes/GameScene';
 
 export default class Spaceship extends THREE.Mesh {
 	protected scene: GameScene;
@@ -9,17 +10,19 @@ export default class Spaceship extends THREE.Mesh {
 	protected app: App;
 	public serverPosition: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 	public serverQ: THREE.Quaternion = new THREE.Quaternion(0, 0, 1);
+	public stateBuffer: StateBuffer;
 
-	constructor(scene: GameScene, spawn?: Spawn) {
+	constructor(scene: GameScene, player?: PlayerState) {
 		const material = Spaceship.getMaterial();
 		const geometry = Spaceship.getGeometry();
 		super(geometry, material);
-
+		this.stateBuffer = new StateBuffer();
 		this.scene = scene;
 		this.scene.add(this);
 
-		if (spawn) {
-			this.position.set(spawn.x, spawn.y, spawn.z);
+		if (player) {
+			const { x, y, z } = player.position;
+			this.position.set(x, y, z);
 			this.lookAt(0, 0, 0);
 		}
 	}
@@ -118,25 +121,17 @@ export default class Spaceship extends THREE.Mesh {
 	}
 
 	move(delta: number) {
-		console.log(this.serverPosition);
+		const currentTime = Date.now() + 30;
 
-		const direction = new THREE.Vector3(0, 0, 1)
-			.applyQuaternion(this.quaternion)
-			.normalize();
+		const interpolatedState =
+			this.stateBuffer.getInterpolatedState(currentTime);
 
-		const speed = 10; // You can make this configurable per player if needed
-		const forwardMovement = direction.multiplyScalar((speed * delta) / 1000); // divide delta by 1000 to convert ms to seconds
-
-		// this.position.set(forwardMovement.x, forwardMovement.y, forwardMovement.z);
-		this.position.lerp(this.serverPosition, 0.2);
-		this.quaternion.slerp(
-			new THREE.Quaternion(
-				this.serverQ.x,
-				this.serverQ.y,
-				this.serverQ.z,
-				this.serverQ.w
-			),
-			0.2
-		);
+		if (interpolatedState) {
+			this.position.copy(interpolatedState.position);
+			this.quaternion.copy(interpolatedState.rotation);
+		} else {
+			this.position.lerp(this.serverPosition, 0.1);
+			this.quaternion.slerp(this.serverQ, 0.1);
+		}
 	}
 }
