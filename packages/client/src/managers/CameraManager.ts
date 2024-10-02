@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import App from '../app';
 import { CONFIG } from '../config/config';
+import Player from '../entities/Player';
 
 export default class CameraManager extends THREE.PerspectiveCamera {
 	private app: App;
@@ -22,25 +23,27 @@ export default class CameraManager extends THREE.PerspectiveCamera {
 	}
 
 	public update() {
-		if (this.app.playerManager.ownSpaceship) {
-			const spaceship = this.app.playerManager.ownSpaceship;
+		if (this.app.playerManager.self) {
+			const player: Player = this.app.playerManager.self;
 			// Calculate the target position behind the spaceship
 			const offset = this.tailOffset
 				.clone()
-				.applyQuaternion(spaceship.quaternion); // Tail offset relative to spaceship's rotation
-			const targetPosition = spaceship.position.clone().add(offset);
+				.applyQuaternion(player.spaceShip.quaternion); // Tail offset relative to spaceship's rotation
+			const targetPosition = player.spaceShip.position.clone().add(offset);
 			// Interpolate (lerp) between current and target position
 			this.position.lerp(targetPosition, this.lerpSpeed);
 			// Calculate spaceship's local up direction for camera alignment
 			const localUp = new THREE.Vector3(0, 1, 0).applyQuaternion(
-				spaceship.quaternion
+				player.spaceShip.quaternion
 			);
 			this.up.copy(localUp);
 			// Calculate forward direction to look at
 			const forwardDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(
-				spaceship.quaternion
+				player.spaceShip.quaternion
 			);
-			const lookAtPosition = spaceship.position.clone().add(forwardDirection);
+			const lookAtPosition = player.spaceShip.position
+				.clone()
+				.add(forwardDirection);
 			// Smoothly interpolate the camera's orientation using slerp
 			const targetQuaternion = new THREE.Quaternion().setFromRotationMatrix(
 				new THREE.Matrix4().lookAt(this.position, lookAtPosition, localUp)

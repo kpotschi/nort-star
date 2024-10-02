@@ -34,7 +34,8 @@ export class State extends Schema {
 }
 
 export type StateInput = {
-	timestamp: number;
+	position: { x: number; y: number; z: number };
+	clientTimestamp: number;
 	inputs: { [key: string]: boolean };
 };
 

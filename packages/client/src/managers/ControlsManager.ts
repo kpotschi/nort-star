@@ -3,22 +3,29 @@ import App from '../app';
 
 export default class ControlsManager {
 	private app: App;
-	public keysPressed: { [key: string]: boolean } = {
-		w: false,
-		a: false,
-		s: false,
-		d: false,
-	}; // Better typing for keysPressed
-	private sendInterval: NodeJS.Timeout | null = null; // Reference to the interval timer
+	public keysPressed: { [key: string]: boolean };
+	private sendInterval: NodeJS.Timeout | null = null;
 
 	constructor(app: App) {
 		this.app = app;
+
+		// Set up the proxy to listen for changes to keysPressed
+		this.keysPressed = new Proxy<{ [key: string]: boolean }>(
+			{ w: false, a: false, s: false, d: false },
+			{
+				set: (target, key: string, value: boolean) => {
+					if (target[key] !== value) {
+						target[key] = value;
+					}
+					return true;
+				},
+			}
+		);
+
 		this.addKeyEvents();
-		this.startSendingInput();
 	}
 
 	private addKeyEvents() {
-		// Add event listeners for keydown and keyup
 		window.addEventListener('keydown', (event) => {
 			this.keysPressed[event.key.toLowerCase()] = true;
 		});
@@ -27,27 +34,27 @@ export default class ControlsManager {
 			this.keysPressed[event.key.toLowerCase()] = false;
 		});
 	}
-
-	private startSendingInput() {
-		this.sendInterval = setInterval(() => {
-			this.sendKeyStateToServer();
-		}, 50);
-	}
-
-	private sendKeyStateToServer() {
-		// Send the current keys pressed to the server
-		if (this.app.currentScene.room) {
-			this.app.currentScene.room.send<StateInput>('move', {
-				inputs: this.keysPressed,
-				timestamp: Date.now(),
-			});
-		}
-	}
-
-	// Optionally, clean up when this manager is no longer needed
-	public cleanup() {
-		if (this.sendInterval) {
-			clearInterval(this.sendInterval);
-		}
-	}
 }
+
+// private startSendingInput() {
+// 	this.sendInterval = setInterval(() => {
+// 		this.sendKeyStateToServer();
+// 	}, 50);
+// }
+
+// private sendKeyStateToServer() {
+// 	if (this.app.currentScene.room) {
+// 		const stateInput: StateInput = {
+// 			inputs: this.keysPressed,
+// 			clientTimestamp: Date.now(),
+// 		};
+// 		this.app.currentScene.room.send<StateInput>('move', stateInput);
+// 		this.app.playerManager.requestBuffer.add(stateInput);
+// 	}
+// }
+
+// public cleanup() {
+// 	if (this.sendInterval) {
+// 		clearInterval(this.sendInterval);
+// 	}
+// }

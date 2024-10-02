@@ -6,83 +6,78 @@ import {
 } from '../../../server/src/rooms/schema/MyRoomState';
 import { Room } from 'colyseus.js';
 import Spaceship from '../entities/Spaceship';
-import PlayerShip from '../entities/PlayerShip';
+import LocalBuffer from './LocalBuffer';
+import Player from '../entities/Player';
 
 export default class PlayerManager {
 	readonly app: App;
-	private players: MapSchema<PlayerState, string>;
+	private playerStates: MapSchema<PlayerState, string>;
+	private players: Record<string, Player> = {};
 	private room: Room<State>;
-	public ownSpaceship: PlayerShip | null = null;
-	public opponentSpaceships: { [id: string]: Spaceship } = {};
+	public self: Player;
+	public localBuffer: LocalBuffer;
 
 	constructor(app: App) {
 		this.app = app;
 	}
 
 	public init() {
+		this.localBuffer = new LocalBuffer();
 		this.room = this.app.currentScene.room;
-		this.players = this.app.currentScene.room.state.players;
+		this.playerStates = this.app.currentScene.room.state.players;
 		this.setupPlayerListeners();
 	}
 
 	private setupPlayerListeners() {
-		this.players.onAdd((player: PlayerState, key: string) => {
-			if (this.room.sessionId !== key) {
-				this.spawnOpponent(key, player);
-			} else {
-				this.spawnSelf(player);
-			}
+		this.playerStates.onAdd((playerState: PlayerState, key: string) => {
+			const isSelf = this.room.sessionId === key;
+			this.players[key] = new Player(this.app, playerState, isSelf);
+			if (isSelf) this.self = this.players[key];
 		});
 
-		this.players.onRemove((player: PlayerState, key: string) => {
-			if (this.opponentSpaceships[key]) {
-				this.removeOpponent(key);
-			}
+		this.playerStates.onRemove((playerState: PlayerState, key: string) => {
+			if (this.players[key]) this.remove(key);
 		});
 
-		this.room.onStateChange((state: State) => {
-			state.players.forEach((player: PlayerState, key: string) => {
-				if (this.opponentSpaceships[key]) {
-					const ship = this.opponentSpaceships[key];
-					ship.stateBuffer.add(player);
-				} else if (this.room.sessionId === key) {
-					this.ownSpaceship.stateBuffer.add(player);
-				}
-			});
-		});
+		// this.room.onStateChange((state: State) => {
+		// 	state.players.forEach((playerState: PlayerState, key: string) => {
+		// 		if (this.opponentSpaceships[key]) {
+		// 			const ship = this.opponentSpaceships[key];
+		// 			ship.stateBuffer.add(playerState);
+		// 		} else if (this.room.sessionId === key) {
+		// 			this.ownSpaceship.stateBuffer.add(playerState);
+		// 		}
+		// 	});
+		// });
 	}
 
-	private spawnSelf(player: PlayerState) {
-		this.ownSpaceship = new PlayerShip(this.app.currentScene, player);
-	}
-
-	private spawnOpponent(key: string, player: PlayerState) {
-		const opponentSpaceship = new Spaceship(this.app.currentScene, player);
-		this.opponentSpaceships[key] = opponentSpaceship;
-		this.app.ui.addMessage(key + ' JOINED');
-	}
-
-	private removeOpponent(key: string) {
-		if (this.opponentSpaceships[key]) {
-			this.app.currentScene.remove(this.opponentSpaceships[key]);
-			this.opponentSpaceships[key].geometry.dispose();
-			// this.app.currentScene.opponentSpaceships[key].material.dispose();
-			delete this.opponentSpaceships[key];
-		}
+	private remove(key: string) {
+		const ship = this.players[key].spaceShip;
+		this.app.currentScene.remove(ship);
+		ship.geometry.dispose();
+		// ship.material.dispose();
+		delete this.players[key];
 		this.app.ui.addMessage(key + ' LEFT');
 	}
 
-	loop(delta: number) {
-		if (this.ownSpaceship) {
-			this.ownSpaceship.handleInput(delta);
-			this.ownSpaceship.move(delta);
-		}
-
-		for (const id in this.opponentSpaceships) {
-			if (this.opponentSpaceships.hasOwnProperty(id)) {
-				const spaceship = this.opponentSpaceships[id];
-				spaceship.move(delta);
-			}
+	public update(delta: number) {
+		const playerKeys = Object.keys(this.players);
+		for (let i = 0; i < playerKeys.length; i++) {
+			this.players[playerKeys[i]].update(delta);
 		}
 	}
+
+	// loop(delta: number) {
+	// 	if (this.ownSpaceship) {
+	// 		this.ownSpaceship.handleInput(delta);
+	// 		this.ownSpaceship.move(delta);
+	// 	}
+
+	// 	for (const id in this.opponentSpaceships) {
+	// 		if (this.opponentSpaceships.hasOwnProperty(id)) {
+	// 			const spaceship = this.opponentSpaceships[id];
+	// 			spaceship.move(delta);
+	// 		}
+	// 	}
+	// }
 }

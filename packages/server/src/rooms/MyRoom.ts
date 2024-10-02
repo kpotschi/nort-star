@@ -20,6 +20,8 @@ export class GameRoom extends Room<State> {
 		this.setState(new State());
 
 		this.onMessage('move', (client, data: StateInput) => {
+			console.log('move');
+
 			const player = this.state.players.get(client.sessionId);
 
 			if (player) {

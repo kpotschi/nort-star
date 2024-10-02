@@ -43,7 +43,7 @@ export default class App {
 		this.controls = new ControlsManager(this);
 		this.ui = new UiManager(this);
 		this.renderer.setupRenderPasses();
-		this.renderer.setAnimationLoop(this.loop.bind(this));
+		this.renderer.setAnimationLoop(this.update.bind(this));
 		this.debugger = new DebugManager(this);
 		this.playerManager = new PlayerManager(this);
 		this.init();
@@ -53,10 +53,10 @@ export default class App {
 		await this.client.init();
 	}
 
-	private loop() {
+	private update() {
 		const delta = this.clock.getDelta();
 		this.camera.update();
-		if (this.currentScene) this.currentScene.loop(delta);
+		if (this.currentScene) this.currentScene.update(delta);
 		if (this.debugger) this.debugger.stats.update();
 		this.renderer.composer.render();
 	}

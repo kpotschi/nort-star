@@ -1,5 +1,8 @@
 import { Client, Room } from 'colyseus.js';
-import { State } from '../../../server/src/rooms/schema/MyRoomState';
+import {
+	State,
+	StateInput,
+} from '../../../server/src/rooms/schema/MyRoomState';
 import App from '../app';
 
 export default class ConnectionManager extends Client {
@@ -16,7 +19,6 @@ export default class ConnectionManager extends Client {
 				this.app.ui.addMessage('WAITING FOR OPPONENT...');
 				this.room = room;
 				this.app.currentScene.init();
-				this.app.currentScene.startGame();
 				this.app.playerManager.init();
 			})
 			.catch((error) => {

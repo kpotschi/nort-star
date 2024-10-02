@@ -5,6 +5,7 @@ import App from '../app';
 import BackgroundStars from '../entities/BackgroundStars';
 import Obstacle from '../entities/obstacles/Obstacle';
 import Sun from '../entities/Sun';
+import Player from '../entities/Player';
 
 export default class GameScene extends THREE.Scene {
 	private backgroundStars: BackgroundStars;
@@ -26,11 +27,6 @@ export default class GameScene extends THREE.Scene {
 		this.room = this.app.client.room;
 	}
 
-	public startGame() {
-		// this.app.ui.unsetWarning();
-		// this.app.client.setupPositionListener();
-	}
-
 	private createLighting() {
 		this.add(new THREE.AmbientLight(0xcccccc, 0.6));
 	}
@@ -39,12 +35,10 @@ export default class GameScene extends THREE.Scene {
 		this.backgroundStars = new BackgroundStars(this);
 	}
 
-	public loop(delta: number) {
+	public update(delta: number) {
 		// this.backgroundStars && this.backgroundStars.move(delta);
 		// // Update local player's spaceship
-
-		this.app.playerManager.loop(delta);
-
+		this.app.playerManager.update(delta);
 		// // Update opponent spaceships (positions should come from the server)
 		// for (const id in this.opponentSpaceships) {
 		// 	const opponentSpaceship = this.opponentSpaceships[id];
