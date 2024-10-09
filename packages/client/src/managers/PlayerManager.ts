@@ -29,7 +29,7 @@ export default class PlayerManager {
 	private setupPlayerListeners() {
 		this.playerStates.onAdd((playerState: PlayerState, key: string) => {
 			const isSelf = this.room.sessionId === key;
-			this.players[key] = new Player(this.app, playerState, isSelf);
+			this.players[key] = new Player(this.app, playerState, this, isSelf);
 			if (isSelf) this.self = this.players[key];
 
 			this.self.state.onChange(() => {
@@ -43,15 +43,13 @@ export default class PlayerManager {
 
 		this.room.onStateChange((state: State) => {
 			state.players.forEach((playerState: PlayerState, key: string) => {
-				console.log('server', playerState.x);
-
-				this.players[key].spaceShip.position.set(
-					playerState.x,
-					playerState.y,
-					0
-				);
+				if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
 			});
 		});
+	}
+
+	public isSelf(key: string): boolean {
+		return this.room.sessionId === key;
 	}
 
 	private remove(key: string) {
@@ -69,18 +67,4 @@ export default class PlayerManager {
 			this.players[element].update(deltaMs);
 		}
 	}
-
-	// loop(delta: number) {
-	// 	if (this.ownSpaceship) {
-	// 		this.ownSpaceship.handleInput(delta);
-	// 		this.ownSpaceship.move(delta);
-	// 	}
-
-	// 	for (const id in this.opponentSpaceships) {
-	// 		if (this.opponentSpaceships.hasOwnProperty(id)) {
-	// 			const spaceship = this.opponentSpaceships[id];
-	// 			spaceship.move(delta);
-	// 		}
-	// 	}
-	// }
 }

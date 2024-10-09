@@ -5,6 +5,7 @@ import App from '../app';
 import StateBuffer from '../managers/StateBuffer';
 import GameScene from '../scenes/GameScene';
 import Player from './Player';
+import PlayerManager from '../managers/PlayerManager';
 
 export default class Spaceship extends THREE.Mesh {
 	protected scene: GameScene;
@@ -13,16 +14,20 @@ export default class Spaceship extends THREE.Mesh {
 	// public serverQ: THREE.Quaternion = new THREE.Quaternion(0, 0, 1);
 	public stateBuffer: StateBuffer;
 	// private speed: number = 10;
-	readonly player: Player;
 	private lastSendTime: number = 0; // Time of the last server update
 	readonly sendRate: number = 500; // Send update every 100ms (10 times per second)
+	readonly playerManager: PlayerManager;
 
-	constructor(scene: GameScene, player: Player, playerState?: PlayerState) {
+	constructor(
+		scene: GameScene,
+		playerManager: PlayerManager,
+		playerState?: PlayerState
+	) {
 		const material = Spaceship.getMaterial();
 		const geometry = Spaceship.getGeometry();
 		super(geometry, material);
+		this.playerManager = playerManager;
 		this.stateBuffer = new StateBuffer();
-		this.player = player;
 		this.scene = scene;
 		this.scene.add(this);
 
@@ -126,52 +131,50 @@ export default class Spaceship extends THREE.Mesh {
 	}
 
 	public update(deltaMs: number) {
-		// Only handle input and movement if the player is controlling this spaceship
-		if (this.player.isSelf) {
+		if (this.playerManager.self.isSelf) {
 			this.process(deltaMs);
+			this.updatePosition();
 		}
 	}
 
 	private process(deltaMs: number) {
-		console.log('client', this.position.x, this.position.y);
-
-		// Check for user input
 		let { dx, dy } = this.handleInput();
+
+		const { x, y } = this.predictPosition(dx, deltaMs, dy);
 
 		const state = new PlayerState();
 
-		this.position.setX(this.position.x + (dx * deltaMs) / 100);
-		this.position.setY(this.position.y + (dy * deltaMs) / 100);
+		state.dx = dx;
+		state.dy = dy;
+		state.timestamp = Date.now().toString(); // Set timestamp as string
+		state.x = x;
+		state.y = y;
 
-		// // client prediction of movement
+		this.playerManager.localBuffer.add(state);
 
-		// // Update predicted state locally
-		// state.x = newX;
-		// state.y = newY;
-
-		// Save state and predicted input to local buffer
-		// this.scene.app.playerManager.localBuffer.add(state);
-
-		// Move ship to predicted coordinates locally
-		// this.position.set(newX, newY, 0);
-
-		// Send update to the server at a limited rate (throttle)
 		const currentTime = Date.now();
 		if (currentTime - this.lastSendTime > this.sendRate) {
-			this.processState(state, dx, dy);
+			this.scene.app.currentScene.room.send<PlayerState>('move', state);
 			this.lastSendTime = currentTime; // Update last send time
 		}
 	}
 
-	private processState(playerState: PlayerState, dx: number, dy: number) {
-		// Set properties on the instance
-		// playerState.x = this.position.x;
-		// playerState.y = this.position.y;
-		playerState.dx = dx;
-		playerState.dy = dy;
-		playerState.timestamp = Date.now().toString(); // Set timestamp as string
+	private predictPosition(dx: number, deltaMs: number, dy: number) {
+		return {
+			x: this.position.x + (dx * deltaMs) / 100,
+			y: this.position.y + (dy * deltaMs) / 100,
+		};
+	}
 
-		this.scene.app.currentScene.room.send<PlayerState>('move', playerState);
+	private updatePosition() {
+		const localBuffer = this.playerManager.localBuffer;
+		if (localBuffer.isEmpty()) return;
+
+		// Get the latest reconciled state
+		const latestState = localBuffer.buffer[localBuffer.buffer.length - 1];
+
+		// Set the spaceship's position to the latest state's position
+		this.position.set(latestState.x, latestState.y, 0);
 	}
 
 	private handleInput() {

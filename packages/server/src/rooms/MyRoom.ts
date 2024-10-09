@@ -8,7 +8,7 @@ export class GameRoom extends Room<State> {
 		{ x: 0, y: 0, z: -100 },
 		{ x: 0, y: 0, z: 100 },
 	];
-	readonly tickRate = 30;
+	readonly tickRate = 1;
 
 	onCreate() {
 		this.setState(new State());
@@ -56,6 +56,7 @@ export class GameRoom extends Room<State> {
 		this.state.players.forEach((player: PlayerState) => {
 			player.x += (player.dx * delta) / 100;
 			player.y += (player.dy * delta) / 100;
+			player.timestamp = Date.now().toString();
 		});
 
 		// this.broadcast('update', {
