@@ -7,7 +7,7 @@ import App from '../app';
 import { CONFIG } from '../config/config';
 
 export default class RenderManager extends THREE.WebGLRenderer {
-	private app: App;
+	readonly app: App;
 	public composer: EffectComposer;
 	public bloomPass: UnrealBloomPass;
 	constructor(app: App) {

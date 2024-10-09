@@ -1,10 +1,8 @@
-import { StateInput } from '../../../server/src/rooms/schema/MyRoomState';
 import App from '../app';
 
 export default class ControlsManager {
-	private app: App;
+	public app: App;
 	public keysPressed: { [key: string]: boolean };
-	private sendInterval: NodeJS.Timeout | null = null;
 
 	constructor(app: App) {
 		this.app = app;

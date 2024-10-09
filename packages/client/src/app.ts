@@ -49,14 +49,15 @@ export default class App {
 		this.init();
 	}
 
-	private async init() {
-		await this.client.init();
+	private init() {
+		this.client.init();
 	}
 
 	private update() {
-		const delta = this.clock.getDelta();
+		const deltaMs = this.clock.getDelta() * 1000;
+
 		this.camera.update();
-		if (this.currentScene) this.currentScene.update(delta);
+		if (this.currentScene) this.currentScene.update(deltaMs);
 		if (this.debugger) this.debugger.stats.update();
 		this.renderer.composer.render();
 	}

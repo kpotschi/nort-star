@@ -1,23 +1,21 @@
+import { CONFIG } from './../config/config';
 import * as THREE from 'three';
-import {
-	PlayerState,
-	StateInput,
-} from '../../../server/src/rooms/schema/MyRoomState';
+import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
 import App from '../app';
 import StateBuffer from '../managers/StateBuffer';
 import GameScene from '../scenes/GameScene';
 import Player from './Player';
-import { CONFIG } from '../config/config';
 
 export default class Spaceship extends THREE.Mesh {
 	protected scene: GameScene;
 	public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
-	protected app: App;
 	public serverPosition: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
-	public serverQ: THREE.Quaternion = new THREE.Quaternion(0, 0, 1);
+	// public serverQ: THREE.Quaternion = new THREE.Quaternion(0, 0, 1);
 	public stateBuffer: StateBuffer;
-	private speed: number = 10;
-	private player: Player;
+	// private speed: number = 10;
+	readonly player: Player;
+	private lastSendTime: number = 0; // Time of the last server update
+	readonly sendRate: number = 500; // Send update every 100ms (10 times per second)
 
 	constructor(scene: GameScene, player: Player, playerState?: PlayerState) {
 		const material = Spaceship.getMaterial();
@@ -29,8 +27,7 @@ export default class Spaceship extends THREE.Mesh {
 		this.scene.add(this);
 
 		if (playerState) {
-			const { x, y, z } = playerState.position;
-			this.position.set(x, y, z);
+			this.position.set(playerState.x, playerState.y, 0);
 			this.lookAt(0, 0, 0);
 		}
 	}
@@ -128,65 +125,78 @@ export default class Spaceship extends THREE.Mesh {
 		return geometry;
 	}
 
-	public update(delta: number) {
-		this.direction = new THREE.Vector3(0, 0, 1)
-			.applyQuaternion(this.quaternion)
-			.normalize();
-		const forwardMovement = this.direction
-			.clone()
-			.multiplyScalar(this.speed * delta);
-		this.position.add(forwardMovement);
+	public update(deltaMs: number) {
+		// Only handle input and movement if the player is controlling this spaceship
 		if (this.player.isSelf) {
-			this.handleInput(delta);
-			this.handleLocalState();
+			this.process(deltaMs);
 		}
-
-		// const currentTime = Date.now() + 30;
-		// const interpolatedState =
-		// 	this.stateBuffer.getInterpolatedState(currentTime);
-		// if (interpolatedState) {
-		// 	this.position.copy(interpolatedState.position);
-		// 	this.quaternion.copy(interpolatedState.rotation);
-		// } else {
-		// 	this.position.lerp(this.serverPosition, 0.1);
-		// 	this.quaternion.slerp(this.serverQ, 0.1);
-		// }
 	}
 
-	private handleLocalState() {
-		const stateInput: StateInput = {
-			position: this.app.playerManager.self.spaceShip.position,
-			inputs: this.app.controls.keysPressed,
-			clientTimestamp: Date.now(),
-		};
-		this.app.playerManager.localBuffer.add(stateInput);
-		this.app.currentScene.room.send<StateInput>('move', stateInput);
+	private process(deltaMs: number) {
+		console.log('client', this.position.x, this.position.y);
+
+		// Check for user input
+		let { dx, dy } = this.handleInput();
+
+		const state = new PlayerState();
+
+		this.position.setX(this.position.x + (dx * deltaMs) / 100);
+		this.position.setY(this.position.y + (dy * deltaMs) / 100);
+
+		// // client prediction of movement
+
+		// // Update predicted state locally
+		// state.x = newX;
+		// state.y = newY;
+
+		// Save state and predicted input to local buffer
+		// this.scene.app.playerManager.localBuffer.add(state);
+
+		// Move ship to predicted coordinates locally
+		// this.position.set(newX, newY, 0);
+
+		// Send update to the server at a limited rate (throttle)
+		const currentTime = Date.now();
+		if (currentTime - this.lastSendTime > this.sendRate) {
+			this.processState(state, dx, dy);
+			this.lastSendTime = currentTime; // Update last send time
+		}
 	}
 
-	private handleInput(delta: number) {
-		if (this.scene.app.controls.keysPressed['w'] === true) {
-			this.rotateOnAxis(
-				new THREE.Vector3(1, 0, 0),
-				CONFIG.CONTROLS.ROTATION_SPEED * delta
-			);
+	private processState(playerState: PlayerState, dx: number, dy: number) {
+		// Set properties on the instance
+		// playerState.x = this.position.x;
+		// playerState.y = this.position.y;
+		playerState.dx = dx;
+		playerState.dy = dy;
+		playerState.timestamp = Date.now().toString(); // Set timestamp as string
+
+		this.scene.app.currentScene.room.send<PlayerState>('move', playerState);
+	}
+
+	private handleInput() {
+		let dx = 0;
+		let dy = 0;
+
+		if (this.scene.app.controls.keysPressed['w']) {
+			dy += 1; // Forward
 		}
 		if (this.scene.app.controls.keysPressed['s']) {
-			this.rotateOnAxis(
-				new THREE.Vector3(-1, 0, 0),
-				CONFIG.CONTROLS.ROTATION_SPEED * delta
-			);
-		}
-		if (this.scene.app.controls.keysPressed['a']) {
-			this.rotateOnAxis(
-				new THREE.Vector3(0, 1, 0),
-				CONFIG.CONTROLS.ROTATION_SPEED * delta
-			);
+			dy -= 1; // Backward
 		}
 		if (this.scene.app.controls.keysPressed['d']) {
-			this.rotateOnAxis(
-				new THREE.Vector3(0, -1, 0),
-				CONFIG.CONTROLS.ROTATION_SPEED * delta
-			);
+			dx -= 1; // Left
 		}
+		if (this.scene.app.controls.keysPressed['a']) {
+			dx += 1; // Right
+		}
+
+		// Normalize to prevent faster diagonal movement
+		const length = Math.sqrt(dx * dx + dy * dy);
+		if (length > 0) {
+			dx /= length;
+			dy /= length;
+		}
+		return { dx, dy };
 	}
 }

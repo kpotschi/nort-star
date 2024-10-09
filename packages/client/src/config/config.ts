@@ -10,6 +10,9 @@ export const CONFIG = {
 			EXPOSURE: 1,
 		},
 	},
+	PLAYER: {
+		// SPEED: 10,
+	},
 	CONTROLS: {
 		ROTATION_SPEED: 1,
 		MAX_ROTATION: Math.PI / 4,

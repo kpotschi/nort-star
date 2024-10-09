@@ -1,14 +1,12 @@
 import { MapSchema } from '@colyseus/schema';
-import App from '../app';
+import { Room } from 'colyseus.js';
 import {
 	PlayerState,
 	State,
 } from '../../../server/src/rooms/schema/MyRoomState';
-import { Room } from 'colyseus.js';
-import Spaceship from '../entities/Spaceship';
-import LocalBuffer from './LocalBuffer';
+import App from '../app';
 import Player from '../entities/Player';
-
+import LocalBuffer from './LocalBuffer';
 export default class PlayerManager {
 	readonly app: App;
 	private playerStates: MapSchema<PlayerState, string>;
@@ -33,22 +31,27 @@ export default class PlayerManager {
 			const isSelf = this.room.sessionId === key;
 			this.players[key] = new Player(this.app, playerState, isSelf);
 			if (isSelf) this.self = this.players[key];
+
+			this.self.state.onChange(() => {
+				// this.self.spaceShip.position.set(
+			});
 		});
 
 		this.playerStates.onRemove((playerState: PlayerState, key: string) => {
 			if (this.players[key]) this.remove(key);
 		});
 
-		// this.room.onStateChange((state: State) => {
-		// 	state.players.forEach((playerState: PlayerState, key: string) => {
-		// 		if (this.opponentSpaceships[key]) {
-		// 			const ship = this.opponentSpaceships[key];
-		// 			ship.stateBuffer.add(playerState);
-		// 		} else if (this.room.sessionId === key) {
-		// 			this.ownSpaceship.stateBuffer.add(playerState);
-		// 		}
-		// 	});
-		// });
+		this.room.onStateChange((state: State) => {
+			state.players.forEach((playerState: PlayerState, key: string) => {
+				console.log('server', playerState.x);
+
+				this.players[key].spaceShip.position.set(
+					playerState.x,
+					playerState.y,
+					0
+				);
+			});
+		});
 	}
 
 	private remove(key: string) {
@@ -60,10 +63,10 @@ export default class PlayerManager {
 		this.app.ui.addMessage(key + ' LEFT');
 	}
 
-	public update(delta: number) {
+	public update(deltaMs: number) {
 		const playerKeys = Object.keys(this.players);
-		for (let i = 0; i < playerKeys.length; i++) {
-			this.players[playerKeys[i]].update(delta);
+		for (const element of playerKeys) {
+			this.players[element].update(deltaMs);
 		}
 	}
 

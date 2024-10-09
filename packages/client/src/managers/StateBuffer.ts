@@ -1,19 +1,21 @@
-import { StateOutput } from '../../../server/src/rooms/schema/MyRoomState';
-import * as THREE from 'three';
+import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
 
 export default class StateBuffer {
-	readonly buffer: StateOutput[];
+	readonly buffer: PlayerState[];
 	readonly maxBufferLength: number;
+
 	constructor(maxBufferLength = 100) {
 		this.buffer = []; // Holds the server states
 		this.maxBufferLength = maxBufferLength;
 	}
 
-	add(state: StateOutput) {
+	add(state: PlayerState) {
+		// Add the new state to the buffer
 		this.buffer.push(state);
 
+		// Ensure the buffer does not exceed the maximum length
 		if (this.buffer.length > this.maxBufferLength) {
-			this.buffer.shift();
+			this.buffer.shift(); // Remove the oldest state if buffer is too long
 		}
 	}
 
@@ -23,40 +25,34 @@ export default class StateBuffer {
 			return null; // Not enough states to interpolate
 		}
 
-		let latestState: StateOutput = null;
-		let nextState: StateOutput = null;
+		let previousState: PlayerState = null;
+		let nextState: PlayerState = null;
 
 		// Iterate through the buffer to find the right pair of states
 		for (let i = 0; i < this.buffer.length - 1; i++) {
 			if (
-				this.buffer[i].timestamp <= currentTime &&
-				this.buffer[i + 1].timestamp >= currentTime
+				Number(this.buffer[i].timestamp) <= currentTime &&
+				Number(this.buffer[i + 1].timestamp) >= currentTime
 			) {
-				latestState = this.buffer[i];
+				previousState = this.buffer[i];
 				nextState = this.buffer[i + 1];
 				break;
 			}
 		}
 
-		if (latestState && nextState) {
-			// Calculate the interpolation factor
+		if (previousState && nextState) {
+			// Calculate the interpolation factor (0 to 1)
 			const factor =
-				(currentTime - latestState.timestamp) /
-				(nextState.timestamp - latestState.timestamp);
+				(currentTime - Number(previousState.timestamp)) /
+				(Number(nextState.timestamp) - Number(previousState.timestamp));
 
-			// Interpolate position and rotation
-			const { x, y, z } = latestState.position;
-			const interpolatedPosition = new THREE.Vector3(x, y, z)
-				.clone()
-				.lerp(nextState.position, factor);
+			// Interpolate x and y positions
+			const interpolatedX =
+				previousState.x + (nextState.x - previousState.x) * factor;
+			const interpolatedY =
+				previousState.y + (nextState.y - previousState.y) * factor;
 
-			const { qx, qy, qz, qw } = latestState.rotation;
-			const { qx: nqx, qy: nqy, qz: nqz, qw: nqw } = nextState.rotation;
-			const interpolatedRotation = new THREE.Quaternion(qx, qy, qz, qw)
-				.clone()
-				.slerp(new THREE.Quaternion(nqx, nqy, nqz, nqw), factor);
-
-			return { position: interpolatedPosition, rotation: interpolatedRotation };
+			return { x: interpolatedX, y: interpolatedY };
 		}
 
 		return null; // If unable to find suitable states

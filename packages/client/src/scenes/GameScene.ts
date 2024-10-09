@@ -35,10 +35,10 @@ export default class GameScene extends THREE.Scene {
 		this.backgroundStars = new BackgroundStars(this);
 	}
 
-	public update(delta: number) {
+	public update(deltaMs: number) {
 		// this.backgroundStars && this.backgroundStars.move(delta);
 		// // Update local player's spaceship
-		this.app.playerManager.update(delta);
+		this.app.playerManager.update(deltaMs);
 		// // Update opponent spaceships (positions should come from the server)
 		// for (const id in this.opponentSpaceships) {
 		// 	const opponentSpaceship = this.opponentSpaceships[id];

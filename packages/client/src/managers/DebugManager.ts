@@ -7,10 +7,9 @@ import * as THREE from 'three';
 import Spaceship from '../entities/Spaceship';
 
 export default class DebugManager extends GUI {
-	private app: App;
+	readonly app: App;
 	public stats: Stats;
 	private controls: OrbitControls;
-	private spaceship: Spaceship;
 
 	constructor(app: App) {
 		super();
@@ -35,8 +34,6 @@ export default class DebugManager extends GUI {
 	}
 
 	private initDirection() {
-		// const shipDirection = this.spaceship.direction;
-
 		const origin = new THREE.Vector3(0, 0, 0);
 		const length = 3;
 

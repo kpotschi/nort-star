@@ -1,12 +1,9 @@
 import { Client, Room } from 'colyseus.js';
-import {
-	State,
-	StateInput,
-} from '../../../server/src/rooms/schema/MyRoomState';
+import { State } from '../../../server/src/rooms/schema/MyRoomState';
 import App from '../app';
 
 export default class ConnectionManager extends Client {
-	private app: App;
+	readonly app: App;
 	public room: Room<State>;
 	constructor(app: App) {
 		super('http://localhost:2567');
