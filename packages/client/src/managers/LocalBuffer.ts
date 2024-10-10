@@ -2,11 +2,16 @@ import {
 	LocalBufferPlayerState,
 	PlayerState,
 } from '../../../server/src/rooms/schema/MyRoomState';
+import GameScene from '../scenes/GameScene';
+import PlayerManager from './PlayerManager';
 
 export default class LocalBuffer {
 	readonly buffer: LocalBufferPlayerState[];
 	readonly maxBufferLength: number;
-	constructor(maxBufferLength = 100) {
+	private playerManager: PlayerManager;
+
+	constructor(playerManager: PlayerManager, maxBufferLength = 100) {
+		this.playerManager = playerManager;
 		this.buffer = [];
 		this.maxBufferLength = maxBufferLength;
 	}
@@ -19,7 +24,7 @@ export default class LocalBuffer {
 		bufferState.dx = state.dx;
 		bufferState.dy = state.dy;
 
-		bufferState.numericTimestamp = Number(state.timestamp);
+		bufferState.timestamp = Number(state.timestamp);
 
 		this.buffer.push(bufferState);
 
@@ -31,7 +36,7 @@ export default class LocalBuffer {
 	reconcile(state: PlayerState) {
 		// Find the most recent buffered state that is before or at the server timestamp
 		let index = this.buffer.findIndex(
-			(bufferState) => bufferState.numericTimestamp > Number(state.timestamp)
+			(bufferState) => bufferState.timestamp > Number(state.timestamp)
 		);
 
 		// If there is no buffered state after the server's timestamp, there's nothing to reconcile
@@ -48,16 +53,37 @@ export default class LocalBuffer {
 
 		// Apply the correction using lerp to the previous state and all subsequent states in the buffer
 		for (let i = index - 1; i < this.buffer.length; i++) {
-			this.buffer[i].x += errorX * lerpFactor;
-			this.buffer[i].y += errorY * lerpFactor;
+			// this.buffer[i].x += errorX * lerpFactor;
+			// this.buffer[i].y += errorY * lerpFactor;
+			this.buffer[i].x += errorX;
+			this.buffer[i].y += errorY;
 		}
 
 		this.buffer.splice(0, index - 1);
+
+		this.playerManager.self.spaceShip.updatePosition();
+
 		// Optionally, you can apply some smoothing factor here to avoid sudden snapping
 		// For example, you can lerp between the current position and the corrected position.
 	}
 
 	public isEmpty(): boolean {
 		return this.buffer.length === 0;
+	}
+
+	public getLatestState(): PlayerState {
+		const localState = this.buffer[this.buffer.length - 1];
+		const playerState = new PlayerState();
+		// Create a shallow copy of the state
+		playerState.dx = localState.dx;
+		playerState.dy = localState.dy;
+
+		playerState.x = localState.x;
+		playerState.y = localState.y;
+		playerState.timestamp = localState.timestamp.toString();
+
+		// Convert the timestamp to a string
+
+		return playerState;
 	}
 }

@@ -9,6 +9,7 @@ export default class Player {
 	public spaceShip: Spaceship;
 	public state: PlayerState;
 	readonly playerManager: PlayerManager;
+	public velocity: { x: number; y: number };
 
 	constructor(
 		app: App,
@@ -17,6 +18,7 @@ export default class Player {
 		isSelf = false
 	) {
 		this.app = app;
+		this.velocity = { x: 0, y: 0 };
 		this.state = playerState;
 		this.isSelf = isSelf;
 		this.playerManager = playerManager;
@@ -24,6 +26,27 @@ export default class Player {
 	}
 
 	public update(deltaMs: number) {
-		this.spaceShip.update(deltaMs);
+		this.process(deltaMs);
+		this.spaceShip.updatePosition();
+	}
+
+	private process(deltaMs: number) {
+		if (this.isSelf) {
+			this.playerManager.updateState(deltaMs);
+			// let { dx, dy } = this.handleInput();
+
+			// const currentTime = Date.now();
+			// if (currentTime - this.lastSendTime > this.sendRate) {
+			// 	this.scene.app.currentScene.room.send<PlayerState>('move', state);
+			// 	this.lastSendTime = currentTime; // Update last send time
+			// }
+		}
+	}
+
+	public predictPosition(deltaMs: number) {
+		return {
+			x: this.spaceShip.position.x + (this.velocity.x * deltaMs) / 100,
+			y: this.spaceShip.position.y + (this.velocity.y * deltaMs) / 100,
+		};
 	}
 }

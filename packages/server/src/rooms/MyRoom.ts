@@ -8,25 +8,31 @@ export class GameRoom extends Room<State> {
 		{ x: 0, y: 0, z: -100 },
 		{ x: 0, y: 0, z: 100 },
 	];
-	readonly tickRate = 1;
+	readonly tickRate = 10;
 
 	onCreate() {
 		this.setState(new State());
 
 		this.onMessage('move', (client, data: PlayerState) => {
-			// console.log('move');
-
 			const player = this.state.players.get(client.sessionId);
 
-			// const delta = Number(data.timestamp) - Number(player.timestamp);
+			const delta = Number(data.timestamp) - Number(player.timestamp);
 
 			if (player) {
 				player.dx = data.dx || 0;
 				player.dy = data.dy || 0;
+
+				player.x += (player.dx * delta) / 100;
+				player.y += (player.dy * delta) / 100;
+				player.timestamp = Date.now().toString();
+				console.log(player.x);
 			}
 		});
 
-		this.setSimulationInterval((delta) => this.updateLoop(delta));
+		this.setSimulationInterval(
+			(delta) => this.updateLoop(delta),
+			1000 / this.tickRate
+		);
 	}
 
 	onJoin(client: Client, options: any) {
@@ -58,10 +64,5 @@ export class GameRoom extends Room<State> {
 			player.y += (player.dy * delta) / 100;
 			player.timestamp = Date.now().toString();
 		});
-
-		// this.broadcast('update', {
-		// 	players: playersState,
-		// 	timestamp: Date.now(), // Include the server timestamp
-		// });
 	}
 }

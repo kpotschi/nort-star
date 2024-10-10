@@ -20,7 +20,7 @@ export default class PlayerManager {
 	}
 
 	public init() {
-		this.localBuffer = new LocalBuffer();
+		this.localBuffer = new LocalBuffer(this);
 		this.room = this.app.currentScene.room;
 		this.playerStates = this.app.currentScene.room.state.players;
 		this.setupPlayerListeners();
@@ -32,9 +32,9 @@ export default class PlayerManager {
 			this.players[key] = new Player(this.app, playerState, this, isSelf);
 			if (isSelf) this.self = this.players[key];
 
-			this.self.state.onChange(() => {
-				// this.self.spaceShip.position.set(
-			});
+			// this.self.state.onChange(() => {
+			// 	// this.self.spaceShip.position.set(
+			// });
 		});
 
 		this.playerStates.onRemove((playerState: PlayerState, key: string) => {
@@ -66,5 +66,55 @@ export default class PlayerManager {
 		for (const element of playerKeys) {
 			this.players[element].update(deltaMs);
 		}
+	}
+
+	public sendServerUpdate() {
+		const latestState = this.localBuffer.getLatestState();
+		latestState.dx = this.self.velocity.x;
+		latestState.dy = this.self.velocity.y;
+
+		this.room.send<PlayerState>('move', latestState);
+	}
+
+	public updateState(deltaMs: number): void {
+		const state = new PlayerState();
+		state.dx = this.self.velocity.x;
+		state.dy = this.self.velocity.y;
+		state.timestamp = Date.now().toString();
+
+		const { x, y } = this.self.predictPosition(deltaMs);
+		state.x = x;
+		state.y = y;
+
+		this.localBuffer.add(state);
+	}
+
+	public updateInput() {
+		this.self.velocity = { x: 0, y: 0 };
+
+		if (this.app.controls.keysPressed['w']) {
+			this.self.velocity.y += 1; // Forward
+		}
+		if (this.app.controls.keysPressed['s']) {
+			this.self.velocity.y -= 1; // Backward
+		}
+		if (this.app.controls.keysPressed['d']) {
+			this.self.velocity.x -= 1; // Left
+		}
+		if (this.app.controls.keysPressed['a']) {
+			this.self.velocity.x += 1; // Right
+		}
+
+		// Normalize to prevent faster diagonal movement
+		const length = Math.sqrt(
+			this.self.velocity.x * this.self.velocity.x +
+				this.self.velocity.y * this.self.velocity.y
+		);
+		if (length > 0) {
+			this.self.velocity.x /= length;
+			this.self.velocity.y /= length;
+		}
+
+		this.sendServerUpdate();
 	}
 }

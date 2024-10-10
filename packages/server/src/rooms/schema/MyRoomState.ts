@@ -20,6 +20,6 @@ export class State extends Schema {
 	@type({ map: PlayerState }) players = new MapSchema<PlayerState>();
 }
 
-export class LocalBufferPlayerState extends PlayerState {
-	@type('number') numericTimestamp = 0;
+export class LocalBufferPlayerState extends BaseState {
+	@type('number') timestamp = 0;
 }

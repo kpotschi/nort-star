@@ -14,6 +14,7 @@ export default class ControlsManager {
 				set: (target, key: string, value: boolean) => {
 					if (target[key] !== value) {
 						target[key] = value;
+						this.app.playerManager.updateInput(); // Only update when the key state changes
 					}
 					return true;
 				},
@@ -25,34 +26,19 @@ export default class ControlsManager {
 
 	private addKeyEvents() {
 		window.addEventListener('keydown', (event) => {
-			this.keysPressed[event.key.toLowerCase()] = true;
+			const key = event.key.toLowerCase();
+			if (!this.keysPressed[key]) {
+				// Only update if the key wasn't already pressed
+				this.keysPressed[key] = true;
+			}
 		});
 
 		window.addEventListener('keyup', (event) => {
-			this.keysPressed[event.key.toLowerCase()] = false;
+			const key = event.key.toLowerCase();
+			if (this.keysPressed[key]) {
+				// Only update if the key was pressed before
+				this.keysPressed[key] = false;
+			}
 		});
 	}
 }
-
-// private startSendingInput() {
-// 	this.sendInterval = setInterval(() => {
-// 		this.sendKeyStateToServer();
-// 	}, 50);
-// }
-
-// private sendKeyStateToServer() {
-// 	if (this.app.currentScene.room) {
-// 		const stateInput: StateInput = {
-// 			inputs: this.keysPressed,
-// 			clientTimestamp: Date.now(),
-// 		};
-// 		this.app.currentScene.room.send<StateInput>('move', stateInput);
-// 		this.app.playerManager.requestBuffer.add(stateInput);
-// 	}
-// }
-
-// public cleanup() {
-// 	if (this.sendInterval) {
-// 		clearInterval(this.sendInterval);
-// 	}
-// }
