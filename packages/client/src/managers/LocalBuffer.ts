@@ -35,7 +35,7 @@ export default class LocalBuffer {
 		);
 
 		// If there is no buffered state after the server's timestamp, there's nothing to reconcile
-		if (index === -1) return;
+		if (index === -1 || index === 0) return;
 
 		// The previous buffered state is the one just before the server timestamp
 		const previousState = this.buffer[index - 1];
