@@ -28,4 +28,8 @@ export const CONFIG = {
 	CAMERA: {
 		LERP_SPEED: 0.1,
 	},
+	SERVER_RECON: {
+		HEARTBEAT_MS: 200,
+		POSITION_LERP_FACTOR: 0.3,
+	},
 };

@@ -1,3 +1,4 @@
+import { CONFIG } from './../../../../node_modules/nort-star-client/src/config/config';
 import {
 	LocalBufferPlayerState,
 	PlayerState,
@@ -49,22 +50,14 @@ export default class LocalBuffer {
 		const errorX = state.x - previousState.x;
 		const errorY = state.y - previousState.y;
 
-		const lerpFactor = 0.1; // Adjust this factor to control the smoothing
-
-		// Apply the correction using lerp to the previous state and all subsequent states in the buffer
 		for (let i = index - 1; i < this.buffer.length; i++) {
-			// this.buffer[i].x += errorX * lerpFactor;
-			// this.buffer[i].y += errorY * lerpFactor;
-			this.buffer[i].x += errorX;
-			this.buffer[i].y += errorY;
+			this.buffer[i].x += errorX * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+			this.buffer[i].y += errorY * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
 		}
 
 		this.buffer.splice(0, index - 1);
 
 		this.playerManager.self.spaceShip.updatePosition();
-
-		// Optionally, you can apply some smoothing factor here to avoid sudden snapping
-		// For example, you can lerp between the current position and the corrected position.
 	}
 
 	public isEmpty(): boolean {

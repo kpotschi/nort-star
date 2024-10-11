@@ -1,9 +1,11 @@
-import { MapSchema } from '@colyseus/schema';
-import { Room } from 'colyseus.js';
+import { CONFIG } from './../../../../node_modules/nort-star-client/src/config/config';
 import {
 	PlayerState,
 	State,
-} from '../../../server/src/rooms/schema/MyRoomState';
+} from './../../../../packages/server/src/rooms/schema/MyRoomState';
+import { MapSchema } from '@colyseus/schema';
+import { Room } from 'colyseus.js';
+
 import App from '../app';
 import Player from '../entities/Player';
 import LocalBuffer from './LocalBuffer';
@@ -14,7 +16,8 @@ export default class PlayerManager {
 	private room: Room<State>;
 	public self: Player;
 	public localBuffer: LocalBuffer;
-
+	readonly sendRate: number = CONFIG.SERVER_RECON.HEARTBEAT_MS;
+	private lastHeartBeatTime: number = 0;
 	constructor(app: App) {
 		this.app = app;
 	}
@@ -31,10 +34,6 @@ export default class PlayerManager {
 			const isSelf = this.room.sessionId === key;
 			this.players[key] = new Player(this.app, playerState, this, isSelf);
 			if (isSelf) this.self = this.players[key];
-
-			// this.self.state.onChange(() => {
-			// 	// this.self.spaceShip.position.set(
-			// });
 		});
 
 		this.playerStates.onRemove((playerState: PlayerState, key: string) => {
@@ -66,14 +65,18 @@ export default class PlayerManager {
 		for (const element of playerKeys) {
 			this.players[element].update(deltaMs);
 		}
+		this.updateHeartBeat();
 	}
 
 	public sendServerUpdate() {
-		const latestState = this.localBuffer.getLatestState();
-		latestState.dx = this.self.velocity.x;
-		latestState.dy = this.self.velocity.y;
+		const latestState = this.localBuffer?.getLatestState();
 
-		this.room.send<PlayerState>('move', latestState);
+		if (latestState) {
+			latestState.dx = this.self.velocity.x;
+			latestState.dy = this.self.velocity.y;
+
+			this.room.send<PlayerState>('move', latestState);
+		}
 	}
 
 	public updateState(deltaMs: number): void {
@@ -116,5 +119,17 @@ export default class PlayerManager {
 		}
 
 		this.sendServerUpdate();
+	}
+
+	private updateHeartBeat() {
+		const currentTime = Date.now();
+
+		if (currentTime - this.lastHeartBeatTime > this.sendRate) {
+			console.log('badumm');
+
+			this.sendServerUpdate();
+
+			this.lastHeartBeatTime = currentTime; // Update last send time
+		}
 	}
 }

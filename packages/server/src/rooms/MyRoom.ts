@@ -19,13 +19,12 @@ export class GameRoom extends Room<State> {
 			const delta = Number(data.timestamp) - Number(player.timestamp);
 
 			if (player) {
-				player.dx = data.dx || 0;
-				player.dy = data.dy || 0;
-
 				player.x += (player.dx * delta) / 100;
 				player.y += (player.dy * delta) / 100;
-				player.timestamp = Date.now().toString();
-				console.log(player.x);
+				player.dx = Math.max(-1, Math.min(1, data.dx || 0));
+				player.dy = Math.max(-1, Math.min(1, data.dy || 0));
+
+				player.timestamp = data.timestamp;
 			}
 		});
 
@@ -60,9 +59,11 @@ export class GameRoom extends Room<State> {
 
 	private updateLoop(delta: number) {
 		this.state.players.forEach((player: PlayerState) => {
-			player.x += (player.dx * delta) / 100;
-			player.y += (player.dy * delta) / 100;
-			player.timestamp = Date.now().toString();
+			console.log(player.x);
+
+			// 	player.x += (player.dx * delta) / 100;
+			// 	player.y += (player.dy * delta) / 100;
+			// 	player.timestamp = Date.now().toString();
 		});
 	}
 }
