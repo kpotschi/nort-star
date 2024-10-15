@@ -64,18 +64,16 @@ export default class LocalBuffer {
 		return this.buffer.length === 0;
 	}
 
-	public getLatestState(): PlayerState {
+	public getLatestState(): PlayerState | null {
 		const localState = this.buffer[this.buffer.length - 1];
+
 		const playerState = new PlayerState();
-		// Create a shallow copy of the state
 		playerState.dx = localState.dx;
 		playerState.dy = localState.dy;
 
 		playerState.x = localState.x;
 		playerState.y = localState.y;
 		playerState.timestamp = localState.timestamp.toString();
-
-		// Convert the timestamp to a string
 
 		return playerState;
 	}

@@ -6,9 +6,10 @@ import GameScene from '../scenes/GameScene';
 
 export default class Spaceship extends THREE.Mesh {
 	protected scene: GameScene;
-	public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
-	public serverPosition: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
-	public stateBuffer: StateBuffer;
+	// public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
+	// public serverPosition: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+	// public stateBuffer: StateBuffer;
+	private velocity: { x: number; y: number } = { x: 0, y: 0 };
 	readonly playerManager: PlayerManager;
 
 	constructor(
@@ -20,7 +21,7 @@ export default class Spaceship extends THREE.Mesh {
 		const geometry = Spaceship.getGeometry();
 		super(geometry, material);
 		this.playerManager = playerManager;
-		this.stateBuffer = new StateBuffer();
+		// this.stateBuffer = new StateBuffer();
 		this.scene = scene;
 		this.scene.add(this);
 
@@ -28,6 +29,10 @@ export default class Spaceship extends THREE.Mesh {
 			this.position.set(playerState.x, playerState.y, 0);
 			this.lookAt(0, 0, 0);
 		}
+	}
+
+	public setVelocity(x: number, y: number) {
+		this.velocity = { x, y };
 	}
 
 	static getMaterial(): THREE.Material {
@@ -131,5 +136,10 @@ export default class Spaceship extends THREE.Mesh {
 		// Set the spaceship's position to the latest state's position
 
 		this.position.set(latestState.x, latestState.y, 0);
+	}
+
+	public move(deltaMs: number) {
+		this.position.x += (this.velocity.x * deltaMs) / 100;
+		this.position.y += (this.velocity.y * deltaMs) / 100;
 	}
 }

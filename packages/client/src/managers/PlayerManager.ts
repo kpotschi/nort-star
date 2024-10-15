@@ -1,4 +1,3 @@
-import { CONFIG } from './../../../../node_modules/nort-star-client/src/config/config';
 import {
 	PlayerState,
 	State,
@@ -9,6 +8,7 @@ import { Room } from 'colyseus.js';
 import App from '../app';
 import Player from '../entities/Player';
 import LocalBuffer from './LocalBuffer';
+import { CONFIG } from '../config/config';
 export default class PlayerManager {
 	readonly app: App;
 	private playerStates: MapSchema<PlayerState, string>;
@@ -43,12 +43,17 @@ export default class PlayerManager {
 		this.room.onStateChange((state: State) => {
 			state.players.forEach((playerState: PlayerState, key: string) => {
 				if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
+				if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
 			});
 		});
 	}
 
 	public isSelf(key: string): boolean {
 		return this.room.sessionId === key;
+	}
+
+	public isOpponent(key: string): boolean {
+		return this.room.sessionId !== key;
 	}
 
 	private remove(key: string) {
@@ -62,6 +67,7 @@ export default class PlayerManager {
 
 	public update(deltaMs: number) {
 		const playerKeys = Object.keys(this.players);
+
 		for (const element of playerKeys) {
 			this.players[element].update(deltaMs);
 		}
@@ -125,8 +131,6 @@ export default class PlayerManager {
 		const currentTime = Date.now();
 
 		if (currentTime - this.lastHeartBeatTime > this.sendRate) {
-			console.log('badumm');
-
 			this.sendServerUpdate();
 
 			this.lastHeartBeatTime = currentTime; // Update last send time

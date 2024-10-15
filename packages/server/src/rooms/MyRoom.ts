@@ -11,6 +11,8 @@ export class GameRoom extends Room<State> {
 	readonly tickRate = 10;
 
 	onCreate() {
+		console.log('creating room ', this.roomId);
+
 		this.setState(new State());
 
 		this.onMessage('move', (client, data: PlayerState) => {
@@ -49,6 +51,7 @@ export class GameRoom extends Room<State> {
 		newPlayer.dy = 0;
 
 		this.state.players.set(client.sessionId, newPlayer);
+		console.log(client.sessionId, ' joined ');
 	}
 
 	onLeave(client: Client, consented: boolean) {
@@ -59,8 +62,6 @@ export class GameRoom extends Room<State> {
 
 	private updateLoop(delta: number) {
 		this.state.players.forEach((player: PlayerState) => {
-			console.log(player.x);
-
 			// 	player.x += (player.dx * delta) / 100;
 			// 	player.y += (player.dy * delta) / 100;
 			// 	player.timestamp = Date.now().toString();

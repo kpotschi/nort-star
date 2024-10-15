@@ -29,7 +29,7 @@ export const CONFIG = {
 		LERP_SPEED: 0.1,
 	},
 	SERVER_RECON: {
-		HEARTBEAT_MS: 200,
+		HEARTBEAT_MS: 100,
 		POSITION_LERP_FACTOR: 0.3,
 	},
 };
