@@ -8,7 +8,7 @@ import {
 import App from '../app';
 import { CONFIG } from '../config/config';
 import Player from '../entities/Player';
-import LocalBuffer from './LocalBuffer';
+// import LocalBuffer from './LocalBuffer';
 export default class PlayerManager {
 	readonly app: App;
 	private playerStates: MapSchema<PlayerState, string>;
@@ -16,7 +16,7 @@ export default class PlayerManager {
 	private room: Room<State>;
 	private playerKeys: string[] = [];
 	public self: Player;
-	public localBuffer: LocalBuffer;
+	// public localBuffer: LocalBuffer;
 	readonly sendRate: number = CONFIG.SERVER_RECON.HEARTBEAT_MS;
 	private lastHeartBeatTime: number = 0;
 	private lastChange: number = Date.now();
@@ -26,7 +26,7 @@ export default class PlayerManager {
 	}
 
 	public init() {
-		this.localBuffer = new LocalBuffer(this);
+		// this.localBuffer = new LocalBuffer(this);
 		this.room = this.app.currentScene.room;
 
 		// this.playerStates = this.app.currentScene.room.state.players;
@@ -48,10 +48,10 @@ export default class PlayerManager {
 				} else {
 					this.app.ui.addMessage(key + ' JOINED');
 				}
-				$(playerState).onChange(() => {
-					if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
-					if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
-				});
+				// $(playerState).onChange(() => {
+				// if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
+				// if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
+				// });
 			}
 		);
 
@@ -100,14 +100,13 @@ export default class PlayerManager {
 	}
 
 	public sendServerUpdate() {
-		const latestState = this.localBuffer?.getLatestState();
-
-		if (latestState) {
-			latestState.dx = this.self.velocity.x;
-			latestState.dy = this.self.velocity.y;
-			latestState.dz = 1;
-			this.room.send<PlayerState>('move', latestState);
-		}
+		// const latestState = this.localBuffer?.getLatestState();
+		// if (latestState) {
+		// 	latestState.dx = this.self.velocity.x;
+		// 	latestState.dy = this.self.velocity.y;
+		// 	latestState.dz = 1;
+		// 	this.room.send<PlayerState>('move', latestState);
+		// }
 	}
 
 	public updateState(deltaMs: number): void {
@@ -118,12 +117,12 @@ export default class PlayerManager {
 
 		state.timestamp = Date.now().toString();
 
-		const { x, y, z } = this.self.predictPosition(deltaMs);
-		state.x = x;
-		state.y = y;
-		state.z = z;
+		// const { x, y, z } = this.self.predictPosition(deltaMs);
+		// state.x = x;
+		// state.y = y;
+		// state.z = z;
 
-		this.localBuffer.add(state);
+		// this.localBuffer.add(state);
 	}
 
 	public updateInput() {
@@ -166,13 +165,13 @@ export default class PlayerManager {
 	}
 
 	public forcePositionToServerState() {
-		const latestState = this.localBuffer.getLatestState();
-		if (latestState) {
-			this.self.spaceShip.position.set(
-				latestState.x,
-				latestState.y,
-				latestState.z
-			);
-		}
+		// const latestState = this.localBuffer.getLatestState();
+		// if (latestState) {
+		// 	this.self.spaceShip.position.set(
+		// 		latestState.x,
+		// 		latestState.y,
+		// 		latestState.z
+		// 	);
+		// }
 	}
 }

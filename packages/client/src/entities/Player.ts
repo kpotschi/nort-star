@@ -4,6 +4,7 @@ import PlayerManager from '../managers/PlayerManager';
 import { PlayerState } from './../../../server/src/rooms/schema/MyRoomState';
 import Spaceship from './Spaceship';
 import { CONFIG } from '../config/config';
+import StateBuffer from '../managers/StateBuffer';
 
 export default class Player {
 	readonly app: App;
@@ -12,6 +13,7 @@ export default class Player {
 	public state: PlayerState;
 	readonly playerManager: PlayerManager;
 	public velocity: THREE.Vector3;
+	private buffer: StateBuffer;
 
 	constructor(
 		app: App,
@@ -19,38 +21,38 @@ export default class Player {
 		playerManager: PlayerManager,
 		isSelf = false
 	) {
+		this.buffer = new StateBuffer(playerState);
 		this.app = app;
-		this.velocity = new THREE.Vector3(0, 0, 0);
-		this.state = playerState;
+		// this.velocity = new THREE.Vector3(0, 0, 0);
+		// this.state = playerState;
 		this.isSelf = isSelf;
 		this.playerManager = playerManager;
 		this.spaceShip = new Spaceship(app.currentScene, this.playerManager);
-		this.writeInitialBufferRecord(playerState);
+		// this.writeInitialBufferRecord(playerState);
 	}
 
 	public update(deltaMs: number) {
-		if (this.isSelf) {
-			this.playerManager.updateState(deltaMs);
-			this.spaceShip.updatePosition();
-		} else {
-			this.spaceShip.move(deltaMs);
-		}
+		// if (this.isSelf) {
+		// 	this.playerManager.updateState(deltaMs);
+		// 	this.spaceShip.updatePosition();
+		// } else {
+		// 	this.spaceShip.move(deltaMs);
+		// }
 	}
 
 	public predictPosition(deltaMs: number) {
-		const latest = this.playerManager.localBuffer.getLatestState();
-		if (!latest) return;
-
-		return {
-			x: latest.x + (this.velocity.x * deltaMs) / 100,
-			y: latest.y + (this.velocity.y * deltaMs) / 100,
-			z: latest.z + deltaMs / 100,
-		};
+		// const latest = this.playerManager.localBuffer.getLatestState();
+		// if (!latest) return;
+		// return {
+		// 	x: latest.x + (this.velocity.x * deltaMs) / 100,
+		// 	y: latest.y + (this.velocity.y * deltaMs) / 100,
+		// 	z: latest.z + deltaMs / 100,
+		// };
 	}
 
-	private writeInitialBufferRecord(state: PlayerState) {
-		this.playerManager.localBuffer.add(state);
-	}
+	// private writeInitialBufferRecord(state: PlayerState) {
+	// this.playerManager.localBuffer.add(state);
+	// }
 
 	public updateBasedOnServer() {
 		this.spaceShip.setVelocity(this.state.dx, this.state.dy, this.state.dz);

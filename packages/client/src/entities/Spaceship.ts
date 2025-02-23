@@ -128,13 +128,12 @@ export default class Spaceship extends THREE.Mesh {
 	}
 
 	public updatePosition() {
-		const localBuffer = this.playerManager.localBuffer;
-		if (localBuffer.isEmpty()) return;
-		// Get the latest reconciled state
-		const latestState = localBuffer.buffer[localBuffer.buffer.length - 1];
+		// const localBuffer = this.playerManager.localBuffer;
+		// if (localBuffer.isEmpty()) return;
+		// // Get the latest reconciled state
+		// const latestState = localBuffer.buffer[localBuffer.buffer.length - 1];
 		// Set the spaceship's position to the latest state's position
-
-		this.position.set(latestState.x, latestState.y, latestState.z);
+		// this.position.set(latestState.x, latestState.y, latestState.z);
 	}
 
 	public move(deltaMs: number) {

@@ -37,4 +37,7 @@ export const CONFIG = {
 		HEARTBEAT_MS: 100,
 		POSITION_LERP_FACTOR: 0.3,
 	},
+	CLIENT_CONFIG: {
+		BUFFER_LENGTH: 100,
+	},
 };
