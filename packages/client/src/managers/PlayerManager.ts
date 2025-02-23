@@ -19,6 +19,7 @@ export default class PlayerManager {
 	public localBuffer: LocalBuffer;
 	readonly sendRate: number = CONFIG.SERVER_RECON.HEARTBEAT_MS;
 	private lastHeartBeatTime: number = 0;
+	private lastChange: number = Date.now();
 
 	constructor(app: App) {
 		this.app = app;
@@ -49,7 +50,6 @@ export default class PlayerManager {
 				}
 				$(playerState).onChange(() => {
 					if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
-
 					if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
 				});
 			}
@@ -65,10 +65,13 @@ export default class PlayerManager {
 		);
 
 		// this.room.onStateChange((state: State) => {
-		// 	state.players.forEach((playerState: PlayerState, key: string) => {
-		// 		if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
-		// 		if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
-		// 	});
+		// 	console.log(Date.now() - this.lastChange);
+
+		// 	this.lastChange = Date.now();
+		// state.players.forEach((playerState: PlayerState, key: string) => {
+		// 	if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
+		// 	if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
+		// });
 		// });
 	}
 
@@ -159,6 +162,17 @@ export default class PlayerManager {
 			this.sendServerUpdate();
 
 			this.lastHeartBeatTime = currentTime; // Update last send time
+		}
+	}
+
+	public forcePositionToServerState() {
+		const latestState = this.localBuffer.getLatestState();
+		if (latestState) {
+			this.self.spaceShip.position.set(
+				latestState.x,
+				latestState.y,
+				latestState.z
+			);
 		}
 	}
 }

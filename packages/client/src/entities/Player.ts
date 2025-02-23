@@ -25,7 +25,7 @@ export default class Player {
 		this.isSelf = isSelf;
 		this.playerManager = playerManager;
 		this.spaceShip = new Spaceship(app.currentScene, this.playerManager);
-		this.writeInitialBufferRecord();
+		this.writeInitialBufferRecord(playerState);
 	}
 
 	public update(deltaMs: number) {
@@ -48,18 +48,16 @@ export default class Player {
 		};
 	}
 
-	private writeInitialBufferRecord() {
-		this.playerManager.localBuffer.add(new PlayerState());
+	private writeInitialBufferRecord(state: PlayerState) {
+		this.playerManager.localBuffer.add(state);
 	}
 
 	public updateBasedOnServer() {
 		this.spaceShip.setVelocity(this.state.dx, this.state.dy, this.state.dz);
 
-		this.spaceShip.position.x +=
-			(this.state.x - this.spaceShip.position.x) * 0.3;
-		this.spaceShip.position.y +=
-			(this.state.y - this.spaceShip.position.y) * 0.3;
-		this.spaceShip.position.z +=
-			(this.state.z - this.spaceShip.position.z) * 0.3;
+		this.spaceShip.position.lerp(
+			{ x: this.state.x, y: this.state.y, z: this.state.z },
+			0.5
+		);
 	}
 }

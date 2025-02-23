@@ -32,6 +32,7 @@ export default class App {
 	public controls: ControlsManager;
 	public scale: ScaleManager;
 	public playerManager: PlayerManager;
+	private isPaused: boolean = false;
 
 	constructor() {
 		this.clock = new THREE.Clock();
@@ -43,23 +44,38 @@ export default class App {
 		this.controls = new ControlsManager(this);
 		this.ui = new UiManager(this);
 		this.renderer.setupRenderPasses();
-		this.renderer.setAnimationLoop(this.update.bind(this));
 		this.debugger = new DebugManager(this);
 		this.playerManager = new PlayerManager(this);
+		this.setupVisibilityChangeListener();
+
 		this.init();
+		this.animate();
 	}
 
 	private init() {
 		this.client.init();
 	}
 
-	private update() {
+	private animate() {
 		const deltaMs = this.clock.getDelta() * 1000;
 
 		this.camera.update();
 		if (this.currentScene) this.currentScene.update(deltaMs);
 		if (this.debugger) this.debugger.stats.update();
 		this.renderer.composer.render();
+		requestAnimationFrame(this.animate.bind(this));
+	}
+
+	private setupVisibilityChangeListener() {
+		document.addEventListener('visibilitychange', () => {
+			if (document.hidden) {
+				this.isPaused = true;
+			} else {
+				this.isPaused = false;
+				this.clock.getDelta();
+				// if (this.playerManager.self) this.playerManager.localBuffer.empty();
+			}
+		});
 	}
 }
 

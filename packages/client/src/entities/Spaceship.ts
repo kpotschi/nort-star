@@ -8,9 +8,6 @@ import GameScene from '../scenes/GameScene';
 
 export default class Spaceship extends THREE.Mesh {
 	protected scene: GameScene;
-	// public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
-	// public serverPosition: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
-	// public stateBuffer: StateBuffer;
 	private velocity: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 	readonly playerManager: PlayerManager;
 
@@ -28,7 +25,7 @@ export default class Spaceship extends THREE.Mesh {
 		this.scene.add(this);
 
 		if (playerState) {
-			this.position.set(playerState.x, playerState.y, 0);
+			this.position.set(playerState.x, playerState.y, playerState.z);
 			this.lookAt(0, 0, 0);
 		}
 	}

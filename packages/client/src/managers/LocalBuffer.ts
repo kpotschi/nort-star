@@ -2,6 +2,7 @@ import {
 	LocalBufferPlayerState,
 	PlayerState,
 } from '../../../server/src/rooms/schema/MyRoomState';
+import Player from '../entities/Player';
 import { CONFIG } from './../../../../node_modules/nort-star-client/src/config/config';
 import PlayerManager from './PlayerManager';
 
@@ -55,6 +56,7 @@ export default class LocalBuffer {
 			this.buffer[i].y += errorY * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
 			this.buffer[i].z += errorZ * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
 		}
+
 		this.buffer.splice(0, index - 1);
 		this.playerManager.self.spaceShip.updatePosition();
 	}
