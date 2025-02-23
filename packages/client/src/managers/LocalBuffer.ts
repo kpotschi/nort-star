@@ -1,9 +1,8 @@
-import { CONFIG } from './../../../../node_modules/nort-star-client/src/config/config';
 import {
 	LocalBufferPlayerState,
 	PlayerState,
 } from '../../../server/src/rooms/schema/MyRoomState';
-import GameScene from '../scenes/GameScene';
+import { CONFIG } from './../../../../node_modules/nort-star-client/src/config/config';
 import PlayerManager from './PlayerManager';
 
 export default class LocalBuffer {
@@ -65,6 +64,7 @@ export default class LocalBuffer {
 	}
 
 	public getLatestState(): PlayerState | null {
+		// if (this.buffer.length > 0) {
 		const localState = this.buffer[this.buffer.length - 1];
 
 		const playerState = new PlayerState();
@@ -76,5 +76,6 @@ export default class LocalBuffer {
 		playerState.timestamp = localState.timestamp.toString();
 
 		return playerState;
+		// }
 	}
 }

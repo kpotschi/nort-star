@@ -9,11 +9,12 @@ export class GameRoom extends Room<State> {
 		{ x: 0, y: 0, z: 100 },
 	];
 	readonly tickRate = 10;
+	state = new State();
 
 	onCreate() {
 		console.log('creating room ', this.roomId);
 
-		this.setState(new State());
+		// this.setState(new State());
 
 		this.onMessage('move', (client, data: PlayerState) => {
 			const player = this.state.players.get(client.sessionId);

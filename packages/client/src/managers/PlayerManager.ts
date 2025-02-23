@@ -2,8 +2,8 @@ import {
 	PlayerState,
 	State,
 } from './../../../../packages/server/src/rooms/schema/MyRoomState';
-import { MapSchema } from '@colyseus/schema';
-import { Room } from 'colyseus.js';
+import { GetCallbackProxy, MapSchema } from '@colyseus/schema';
+import { getStateCallbacks, Room } from 'colyseus.js';
 
 import App from '../app';
 import Player from '../entities/Player';
@@ -18,6 +18,7 @@ export default class PlayerManager {
 	public localBuffer: LocalBuffer;
 	readonly sendRate: number = CONFIG.SERVER_RECON.HEARTBEAT_MS;
 	private lastHeartBeatTime: number = 0;
+
 	constructor(app: App) {
 		this.app = app;
 	}
@@ -25,27 +26,44 @@ export default class PlayerManager {
 	public init() {
 		this.localBuffer = new LocalBuffer(this);
 		this.room = this.app.currentScene.room;
+
 		this.playerStates = this.app.currentScene.room.state.players;
 		this.setupPlayerListeners();
 	}
 
 	private setupPlayerListeners() {
-		this.playerStates.onAdd((playerState: PlayerState, key: string) => {
-			const isSelf = this.room.sessionId === key;
-			this.players[key] = new Player(this.app, playerState, this, isSelf);
-			if (isSelf) this.self = this.players[key];
-		});
+		const $ = getStateCallbacks(this.room);
 
-		this.playerStates.onRemove((playerState: PlayerState, key: string) => {
-			if (this.players[key]) this.remove(key);
-		});
+		$(this.room.state).players.onAdd(
+			(playerState: PlayerState, key: string) => {
+				const isSelf = this.room.sessionId === key;
 
-		this.room.onStateChange((state: State) => {
-			state.players.forEach((playerState: PlayerState, key: string) => {
-				if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
-				if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
-			});
-		});
+				this.players[key] = new Player(this.app, playerState, this, isSelf);
+				if (isSelf) {
+					this.app.ui.addMessage('OWN ID: ' + key);
+					this.self = this.players[key];
+				} else {
+					this.app.ui.addMessage(key + ' JOINED');
+				}
+				$(playerState).onChange(() => {
+					if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
+					if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
+				});
+			}
+		);
+
+		$(this.room.state).players.onRemove(
+			(playerState: PlayerState, key: string) => {
+				if (this.players[key]) this.remove(key);
+			}
+		);
+
+		// this.room.onStateChange((state: State) => {
+		// 	state.players.forEach((playerState: PlayerState, key: string) => {
+		// 		if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
+		// 		if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
+		// 	});
+		// });
 	}
 
 	public isSelf(key: string): boolean {
