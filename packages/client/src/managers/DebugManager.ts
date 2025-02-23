@@ -74,18 +74,11 @@ export default class DebugManager extends GUI {
 				this.app.renderer.bloomPass.strength = Number(value);
 			});
 
-		this.add(this.app.renderer.bloomPass, 'radius', 0.0, 1.0)
+		bloomFolder
+			.add(this.app.renderer.bloomPass, 'radius', 0.0, 1.0)
 			.step(0.01)
 			.onChange((value) => {
 				this.app.renderer.bloomPass.radius = Number(value);
-			});
-
-		const toneMappingFolder = this.addFolder('tone mapping');
-
-		toneMappingFolder
-			.add(CONFIG.RENDER.PASS, 'EXPOSURE', 0.1, 2)
-			.onChange((value) => {
-				this.app.renderer.toneMappingExposure = Math.pow(value, 4.0);
 			});
 	}
 }

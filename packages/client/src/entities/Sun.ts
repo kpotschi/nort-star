@@ -40,7 +40,5 @@ export default class Sun extends THREE.Object3D {
 		// this.lookAt(0, 0, 0);
 	}
 
-	public update(deltaTime: number) {
-		// You can add any update logic here, like shimmer or rotation
-	}
+	public update(deltaTime: number) {}
 }
