@@ -1,6 +1,6 @@
 export const CONFIG = {
 	GAMEPLAY: {
-		START_SPEED: 10,
+		START_SPEED: 1,
 	},
 	RENDER: {
 		PASS: {
@@ -27,6 +27,11 @@ export const CONFIG = {
 	},
 	CAMERA: {
 		LERP_SPEED: 0.1,
+		DEBUG_SPAWN_POINT: {
+			x: 20,
+			y: 20,
+			z: -20,
+		},
 	},
 	SERVER_RECON: {
 		HEARTBEAT_MS: 100,

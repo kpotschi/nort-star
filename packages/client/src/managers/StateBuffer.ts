@@ -1,4 +1,5 @@
 import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
+import * as THREE from 'three';
 
 export default class StateBuffer {
 	readonly buffer: PlayerState[];
@@ -19,7 +20,7 @@ export default class StateBuffer {
 		}
 	}
 
-	getInterpolatedState(currentTime: number) {
+	getInterpolatedState(currentTime: number): THREE.Vector3Like {
 		// Find two states to interpolate between based on the current time
 		if (this.buffer.length < 2) {
 			return null; // Not enough states to interpolate
@@ -51,8 +52,10 @@ export default class StateBuffer {
 				previousState.x + (nextState.x - previousState.x) * factor;
 			const interpolatedY =
 				previousState.y + (nextState.y - previousState.y) * factor;
+			const interpolatedZ =
+				previousState.z + (nextState.z - previousState.z) * factor;
 
-			return { x: interpolatedX, y: interpolatedY };
+			return { x: interpolatedX, y: interpolatedY, z: interpolatedZ };
 		}
 
 		return null; // If unable to find suitable states

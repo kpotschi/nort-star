@@ -1,3 +1,5 @@
+import { Vector3 } from './../../../server/node_modules/@types/three/src/math/Vector3.d';
+import { CONFIG } from './../config/config';
 import * as THREE from 'three';
 import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
 import PlayerManager from '../managers/PlayerManager';
@@ -9,7 +11,7 @@ export default class Spaceship extends THREE.Mesh {
 	// public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
 	// public serverPosition: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 	// public stateBuffer: StateBuffer;
-	private velocity: { x: number; y: number } = { x: 0, y: 0 };
+	private velocity: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 	readonly playerManager: PlayerManager;
 
 	constructor(
@@ -31,8 +33,8 @@ export default class Spaceship extends THREE.Mesh {
 		}
 	}
 
-	public setVelocity(x: number, y: number) {
-		this.velocity = { x, y };
+	public setVelocity(x: number, y: number, z: number) {
+		this.velocity.set(x, y, z);
 	}
 
 	static getMaterial(): THREE.Material {
@@ -135,11 +137,12 @@ export default class Spaceship extends THREE.Mesh {
 		const latestState = localBuffer.buffer[localBuffer.buffer.length - 1];
 		// Set the spaceship's position to the latest state's position
 
-		this.position.set(latestState.x, latestState.y, 0);
+		this.position.set(latestState.x, latestState.y, latestState.z);
 	}
 
 	public move(deltaMs: number) {
 		this.position.x += (this.velocity.x * deltaMs) / 100;
 		this.position.y += (this.velocity.y * deltaMs) / 100;
+		this.position.z += (CONFIG.GAMEPLAY.START_SPEED * deltaMs) / 100;
 	}
 }

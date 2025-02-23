@@ -16,7 +16,11 @@ export default class CameraManager extends THREE.PerspectiveCamera {
 		this.tailOffset = new THREE.Vector3(0, 0, -10); // Adjust as needed (x, y, z)
 
 		// Initial camera position (default, will be updated in update method)
-		this.position.set(0, 0, -10);
+		this.position.set(
+			CONFIG.CAMERA.DEBUG_SPAWN_POINT.x,
+			CONFIG.CAMERA.DEBUG_SPAWN_POINT.y,
+			CONFIG.CAMERA.DEBUG_SPAWN_POINT.z
+		);
 
 		// Set a lerp speed (the higher, the faster the interpolation)
 		this.lerpSpeed = CONFIG.CAMERA.LERP_SPEED || 0.1; // Default if undefined

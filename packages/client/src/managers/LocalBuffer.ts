@@ -21,8 +21,11 @@ export default class LocalBuffer {
 
 		bufferState.x = state.x;
 		bufferState.y = state.y;
+		bufferState.z = state.z;
+
 		bufferState.dx = state.dx;
 		bufferState.dy = state.dy;
+		// bufferState.dz = state.dz;
 
 		bufferState.timestamp = Number(state.timestamp);
 
@@ -33,29 +36,26 @@ export default class LocalBuffer {
 		}
 	}
 
-	reconcile(state: PlayerState) {
+	public reconcile(state: PlayerState) {
 		// Find the most recent buffered state that is before or at the server timestamp
 		let index = this.buffer.findIndex(
 			(bufferState) => bufferState.timestamp > Number(state.timestamp)
 		);
-
-		// If there is no buffered state after the server's timestamp, there's nothing to reconcile
+		// // If there is no buffered state after the server's timestamp, there's nothing to reconcile
 		if (index === -1 || index === 0) return;
-
-		// The previous buffered state is the one just before the server timestamp
+		// // The previous buffered state is the one just before the server timestamp
 		const previousState = this.buffer[index - 1];
-
-		// Calculate the error between the server's state and the predicted state
+		// // Calculate the error between the server's state and the predicted state
 		const errorX = state.x - previousState.x;
 		const errorY = state.y - previousState.y;
+		const errorZ = state.z - previousState.z;
 
 		for (let i = index - 1; i < this.buffer.length; i++) {
 			this.buffer[i].x += errorX * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
 			this.buffer[i].y += errorY * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+			this.buffer[i].z += errorZ * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
 		}
-
 		this.buffer.splice(0, index - 1);
-
 		this.playerManager.self.spaceShip.updatePosition();
 	}
 
@@ -73,6 +73,7 @@ export default class LocalBuffer {
 
 		playerState.x = localState.x;
 		playerState.y = localState.y;
+		playerState.z = localState.z;
 		playerState.timestamp = localState.timestamp.toString();
 
 		return playerState;

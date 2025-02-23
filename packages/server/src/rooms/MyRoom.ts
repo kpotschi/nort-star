@@ -1,3 +1,4 @@
+import { CONFIG } from './../../../client/src/config/config';
 import { Spawn } from './../../../client/src/config/types.d';
 import { Client, Room } from 'colyseus';
 import { PlayerState, State } from './schema/MyRoomState';
@@ -19,11 +20,12 @@ export class GameRoom extends Room<State> {
 		this.onMessage('move', (client, data: PlayerState) => {
 			const player = this.state.players.get(client.sessionId);
 
-			const delta = Number(data.timestamp) - Number(player.timestamp);
+			const deltaMs = Number(data.timestamp) - Number(player.timestamp);
 
 			if (player) {
-				player.x += (player.dx * delta) / 100;
-				player.y += (player.dy * delta) / 100;
+				player.x += (player.dx * deltaMs) / 100;
+				player.y += (player.dy * deltaMs) / 100;
+
 				player.dx = Math.max(-1, Math.min(1, data.dx || 0));
 				player.dy = Math.max(-1, Math.min(1, data.dy || 0));
 
@@ -50,6 +52,7 @@ export class GameRoom extends Room<State> {
 		newPlayer.y = spawnPosition.y;
 		newPlayer.dx = 0;
 		newPlayer.dy = 0;
+		newPlayer.dz = 1;
 
 		this.state.players.set(client.sessionId, newPlayer);
 		console.log(client.sessionId, ' joined ');
@@ -61,11 +64,9 @@ export class GameRoom extends Room<State> {
 		this.state.players.delete(client.sessionId);
 	}
 
-	private updateLoop(delta: number) {
+	private updateLoop(deltaMs: number) {
 		this.state.players.forEach((player: PlayerState) => {
-			// 	player.x += (player.dx * delta) / 100;
-			// 	player.y += (player.dy * delta) / 100;
-			// 	player.timestamp = Date.now().toString();
+			player.z += deltaMs / 100; // Apply constant forward motion
 		});
 	}
 }
