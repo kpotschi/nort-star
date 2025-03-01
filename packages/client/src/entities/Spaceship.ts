@@ -5,33 +5,21 @@ import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
 import PlayerManager from '../managers/PlayerManager';
 import StateBuffer from '../managers/StateBuffer';
 import GameScene from '../scenes/GameScene';
+import Player from './Player';
 
 export default class Spaceship extends THREE.Mesh {
 	protected scene: GameScene;
-	private velocity: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 	readonly playerManager: PlayerManager;
+	readonly player: Player;
 
-	constructor(
-		scene: GameScene,
-		playerManager: PlayerManager,
-		playerState?: PlayerState
-	) {
+	constructor(scene: GameScene, player: Player) {
 		const material = Spaceship.getMaterial();
 		const geometry = Spaceship.getGeometry();
 		super(geometry, material);
-		this.playerManager = playerManager;
-		// this.stateBuffer = new StateBuffer();
+		this.player = player;
+
 		this.scene = scene;
 		this.scene.add(this);
-
-		if (playerState) {
-			this.position.set(playerState.x, playerState.y, playerState.z);
-			this.lookAt(0, 0, 0);
-		}
-	}
-
-	public setVelocity(x: number, y: number, z: number) {
-		this.velocity.set(x, y, z);
 	}
 
 	static getMaterial(): THREE.Material {
@@ -45,6 +33,7 @@ export default class Spaceship extends THREE.Mesh {
 
 	static getGeometry(): THREE.BufferGeometry {
 		const geometry = new THREE.BufferGeometry();
+		// TODO change to indexed vertices
 		const vertices = new Float32Array([
 			0,
 			0,
@@ -127,18 +116,7 @@ export default class Spaceship extends THREE.Mesh {
 		return geometry;
 	}
 
-	public updatePosition() {
-		// const localBuffer = this.playerManager.localBuffer;
-		// if (localBuffer.isEmpty()) return;
-		// // Get the latest reconciled state
-		// const latestState = localBuffer.buffer[localBuffer.buffer.length - 1];
-		// Set the spaceship's position to the latest state's position
-		// this.position.set(latestState.x, latestState.y, latestState.z);
-	}
-
-	public move(deltaMs: number) {
-		this.position.x += (this.velocity.x * deltaMs) / 100;
-		this.position.y += (this.velocity.y * deltaMs) / 100;
-		this.position.z += (CONFIG.GAMEPLAY.START_SPEED * deltaMs) / 100;
+	public update() {
+		this.position.copy(this.player.position);
 	}
 }

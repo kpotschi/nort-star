@@ -11,6 +11,7 @@ export default class ScaleManager {
 		window.addEventListener('resize', () => {
 			this.app.renderer.setSize(window.innerWidth, window.innerHeight);
 			this.app.renderer.composer.setSize(window.innerWidth, window.innerHeight);
+			this.app.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 			this.app.camera.aspect = window.innerWidth / window.innerHeight;
 			this.app.camera.updateProjectionMatrix();

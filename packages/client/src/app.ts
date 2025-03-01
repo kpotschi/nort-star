@@ -37,11 +37,12 @@ export default class App {
 	constructor() {
 		this.clock = new THREE.Clock();
 		this.client = new ConnectionManager(this);
+		this.controls = new ControlsManager(this);
+
 		this.camera = new CameraManager(this);
 		this.renderer = new RenderManager(this);
 		this.currentScene = new GameScene(this);
 		this.scale = new ScaleManager(this);
-		this.controls = new ControlsManager(this);
 		this.ui = new UiManager(this);
 		this.renderer.setupRenderPasses();
 		this.debugger = new DebugManager(this);

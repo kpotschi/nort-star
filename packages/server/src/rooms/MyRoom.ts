@@ -25,6 +25,7 @@ export class GameRoom extends Room<State> {
 			if (player) {
 				player.x += (player.dx * deltaMs) / 100;
 				player.y += (player.dy * deltaMs) / 100;
+				player.z += (CONFIG.GAMEPLAY.START_SPEED * deltaMs) / 100;
 
 				player.dx = Math.max(-1, Math.min(1, data.dx || 0));
 				player.dy = Math.max(-1, Math.min(1, data.dy || 0));
@@ -33,10 +34,10 @@ export class GameRoom extends Room<State> {
 			}
 		});
 
-		this.setSimulationInterval(
-			(delta) => this.updateLoop(delta),
-			1000 / this.tickRate
-		);
+		// this.setSimulationInterval(
+		// 	(delta) => this.updateLoop(delta),
+		// 	1000 / this.tickRate
+		// );
 	}
 
 	onJoin(client: Client, options: any) {
@@ -64,9 +65,10 @@ export class GameRoom extends Room<State> {
 		this.state.players.delete(client.sessionId);
 	}
 
-	private updateLoop(deltaMs: number) {
-		this.state.players.forEach((player: PlayerState) => {
-			player.z += deltaMs / 100; // Apply constant forward motion
-		});
-	}
+	// private updateLoop(deltaMs: number) {
+	// 	this.state.players.forEach((player: PlayerState) => {
+	// 		player.timestamp = Date.now().toString();
+	// 		player.z += deltaMs / 100; // Apply constant forward motion
+	// 	});
+	// }
 }

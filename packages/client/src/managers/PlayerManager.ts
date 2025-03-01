@@ -17,9 +17,6 @@ export default class PlayerManager {
 	private playerKeys: string[] = [];
 	public self: Player;
 	// public localBuffer: LocalBuffer;
-	readonly sendRate: number = CONFIG.SERVER_RECON.HEARTBEAT_MS;
-	private lastHeartBeatTime: number = 0;
-	private lastChange: number = Date.now();
 
 	constructor(app: App) {
 		this.app = app;
@@ -64,15 +61,20 @@ export default class PlayerManager {
 			}
 		);
 
-		// this.room.onStateChange((state: State) => {
-		// 	console.log(Date.now() - this.lastChange);
-
-		// 	this.lastChange = Date.now();
-		// state.players.forEach((playerState: PlayerState, key: string) => {
-		// 	if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
-		// 	if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
-		// });
-		// });
+		this.room.onStateChange((state: State) => {
+			// 	console.log(Date.now() - this.lastChange);
+			// 	this.lastChange = Date.now();
+			state.players.forEach((serverState: PlayerState, key: string) => {
+				const player = this.players[key];
+				if (player) {
+					player.latestServerState.state = serverState;
+					player.latestServerState.wasConsumed = false;
+				}
+				// player.reconcile(serverState);
+				// 	if (this.isSelf(key)) this.localBuffer.reconcile(playerState);
+				// 	if (this.isOpponent(key)) this.players[key].updateBasedOnServer();
+			});
+		});
 	}
 
 	public isSelf(key: string): boolean {
@@ -96,73 +98,20 @@ export default class PlayerManager {
 		for (const element of this.playerKeys) {
 			this.players[element].update(deltaMs);
 		}
-		this.updateHeartBeat();
 	}
 
-	public sendServerUpdate() {
-		// const latestState = this.localBuffer?.getLatestState();
-		// if (latestState) {
-		// 	latestState.dx = this.self.velocity.x;
-		// 	latestState.dy = this.self.velocity.y;
-		// 	latestState.dz = 1;
-		// 	this.room.send<PlayerState>('move', latestState);
-		// }
-	}
-
-	public updateState(deltaMs: number): void {
-		const state = new PlayerState();
-		state.dx = this.self.velocity.x;
-		state.dy = this.self.velocity.y;
-		state.dz = this.self.velocity.z; // Ensure dz is included
-
-		state.timestamp = Date.now().toString();
-
-		// const { x, y, z } = this.self.predictPosition(deltaMs);
-		// state.x = x;
-		// state.y = y;
-		// state.z = z;
-
-		// this.localBuffer.add(state);
-	}
-
-	public updateInput() {
-		this.self.velocity.set(0, 0, 1);
-
-		if (this.app.controls.keysPressed['w']) {
-			this.self.velocity.y += 1; // Forward
-		}
-		if (this.app.controls.keysPressed['s']) {
-			this.self.velocity.y -= 1; // Backward
-		}
-		if (this.app.controls.keysPressed['d']) {
-			this.self.velocity.x -= 1; // Left
-		}
-		if (this.app.controls.keysPressed['a']) {
-			this.self.velocity.x += 1; // Right
-		}
-
-		// Normalize to prevent faster diagonal movement
-		const length = Math.sqrt(
-			this.self.velocity.x * this.self.velocity.x +
-				this.self.velocity.y * this.self.velocity.y
-		);
-		if (length > 0) {
-			this.self.velocity.x /= length;
-			this.self.velocity.y /= length;
-		}
-
-		this.sendServerUpdate();
-	}
-
-	private updateHeartBeat() {
-		const currentTime = Date.now();
-
-		if (currentTime - this.lastHeartBeatTime > this.sendRate) {
-			this.sendServerUpdate();
-
-			this.lastHeartBeatTime = currentTime; // Update last send time
-		}
-	}
+	// public updateState(deltaMs: number): void {
+	// 	// const state = new PlayerState();
+	// 	// state.dx = this.self.velocity.x;
+	// 	// state.dy = this.self.velocity.y;
+	// 	// state.dz = this.self.velocity.z; // Ensure dz is included
+	// 	// state.timestamp = Date.now().toString();
+	// 	// const { x, y, z } = this.self.predictPosition(deltaMs);
+	// 	// state.x = x;
+	// 	// state.y = y;
+	// 	// state.z = z;
+	// 	// this.localBuffer.add(state);
+	// }
 
 	public forcePositionToServerState() {
 		// const latestState = this.localBuffer.getLatestState();

@@ -14,6 +14,7 @@ export default class RenderManager extends THREE.WebGLRenderer {
 		super();
 		this.app = app;
 		this.setupDom();
+		this.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 	}
 
 	private setupDom() {
