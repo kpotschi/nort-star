@@ -42,6 +42,14 @@ export default class Player {
 	}
 
 	public update(deltaMs: number) {
+		// set enemy velocity based on last server update
+		if (!this.isSelf)
+			this.velocity.set(
+				this.latestServerState.state.dx,
+				this.latestServerState.state.dy,
+				this.velocity.z
+			);
+
 		// predict position and change this.position
 		this.predictPosition(deltaMs);
 
@@ -51,7 +59,7 @@ export default class Player {
 
 		// reconcile from server update
 		if (this.latestServerState.wasConsumed === false) {
-			this.reconcile(this.latestServerState.state);
+			this.reconcilePosition(this.latestServerState.state);
 			this.latestServerState.wasConsumed = true;
 		}
 
@@ -72,7 +80,7 @@ export default class Player {
 		// if (!this.isSelf) console.log(this.position.z);
 	}
 
-	public reconcile(serverState: PlayerState) {
+	public reconcilePosition(serverState: PlayerState) {
 		this.buffer.reconcile(serverState);
 	}
 
