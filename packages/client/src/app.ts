@@ -33,8 +33,10 @@ export default class App {
 	public scale: ScaleManager;
 	public playerManager: PlayerManager;
 	private isPaused: boolean = false;
+	readonly debug: boolean = false;
 
 	constructor() {
+		this.debug = process.env.DEBUG === 'true';
 		this.clock = new THREE.Clock();
 		this.client = new ConnectionManager(this);
 		this.controls = new ControlsManager(this);
@@ -45,12 +47,12 @@ export default class App {
 		this.scale = new ScaleManager(this);
 		this.ui = new UiManager(this);
 		this.renderer.setupRenderPasses();
-		this.debugger = new DebugManager(this);
 		this.playerManager = new PlayerManager(this);
 		this.setupVisibilityChangeListener();
 
 		this.init();
 		this.animate();
+		if (this.debug) this.debugger = new DebugManager(this);
 	}
 
 	private init() {
@@ -61,6 +63,7 @@ export default class App {
 		const deltaMs = this.clock.getDelta() * 1000;
 
 		this.camera.update();
+		this.debugger?.update();
 		if (this.currentScene) this.currentScene.update(deltaMs);
 		if (this.debugger) this.debugger.stats.update();
 		this.renderer.composer.render();

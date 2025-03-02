@@ -1,24 +1,20 @@
+import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import App from '../app';
-import { CONFIG } from '../config/config';
-import * as THREE from 'three';
-import Spaceship from '../entities/Spaceship';
 
 export default class DebugManager extends GUI {
 	readonly app: App;
 	public stats: Stats;
-	private controls: OrbitControls;
+	private orbitControls: OrbitControls;
 
 	constructor(app: App) {
 		super();
 		this.app = app;
-		if (process.env.DEBUG === 'true') {
-			this.addStats();
-			this.initGui();
-			this.initControls();
-		}
+		this.addStats();
+		this.initGui();
+		this.initControls();
 	}
 
 	private addStats() {
@@ -27,7 +23,7 @@ export default class DebugManager extends GUI {
 	}
 
 	private initControls() {
-		this.controls = new OrbitControls(
+		this.orbitControls = new OrbitControls(
 			this.app.camera,
 			this.app.renderer.domElement
 		);
@@ -80,5 +76,9 @@ export default class DebugManager extends GUI {
 			.onChange((value) => {
 				this.app.renderer.bloomPass.radius = Number(value);
 			});
+	}
+
+	public update() {
+		// this.orbitControls.target = this.app.playerManager.self?.spaceShip.position;
 	}
 }

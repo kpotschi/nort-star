@@ -1,4 +1,3 @@
-import { Vector3 } from './../../../server/node_modules/@types/three/src/math/Vector3.d';
 import { CONFIG } from './../config/config';
 import * as THREE from 'three';
 import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
@@ -33,86 +32,72 @@ export default class Spaceship extends THREE.Mesh {
 
 	static getGeometry(): THREE.BufferGeometry {
 		const geometry = new THREE.BufferGeometry();
-		// TODO change to indexed vertices
+
+		// Define unique vertices
 		const vertices = new Float32Array([
+			// Front point
 			0,
 			0,
-			2, // 1 front
-			1,
-			0,
-			0, // 1 left
-			0,
-			0.5,
-			0, // 1 top
+			2, // 0: nose
 
-			-1,
-			0,
-			0, // 2 right
-			0,
-			0,
-			2, // 2 front
-			0,
-			0.5,
-			0, // 2 top
-			0,
-			0,
-			-1, // 3 back
-			0,
-			0.5,
-			0, // 3 top
+			// Middle ring
 			1,
 			0,
-			0, // 3 left
-			0,
-			0,
-			-1, // 4 back
-			-1,
-			0,
-			0, // 4 right
+			0, // 1: middle left
 			0,
 			0.5,
-			0, // 4 top
-			0,
-			0,
-			2, // 5 front
-			0,
-			-0.5,
-			0, // 5 bottom
-			1,
-			0,
-			0, // 5 left
-			0,
-			0,
-			2, // 6 front
+			0, // 2: middle top
 			-1,
 			0,
-			0, // 6 right
+			0, // 3: middle right
 			0,
 			-0.5,
-			0, // 6 bottom
-			0,
-			0,
-			-1, // 7 back
-			1,
-			0,
-			0, // 7 left
-			0,
-			-0.5,
-			0, // 7 bottom
-			0,
-			0,
-			-1, // 8 back
-			0,
-			-0.5,
-			0, // 8 bottom
+			0, // 4: middle bottom
 
-			-1,
+			// Back point
 			0,
-			0, // 8 right
+			0,
+			-1, // 5: back
 		]);
 
+		// Define triangles using indices
+		const indices = [
+			// Front triangles (nose cone)
+			0,
+			1,
+			2, // front-left-top
+			0,
+			2,
+			3, // front-right-top
+			0,
+			4,
+			1, // front-bottom-left
+			0,
+			3,
+			4, // front-bottom-right
+
+			// Middle to back triangles (rear cone)
+			5,
+			2,
+			1, // back-top-left
+			5,
+			3,
+			2, // back-top-right
+			5,
+			1,
+			4, // back-bottom-left
+			5,
+			4,
+			3, // back-bottom-right
+		];
+
+		// Set attributes
 		geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+		geometry.setIndex(indices);
+
+		// Compute normals for proper lighting
 		geometry.computeVertexNormals();
+
 		return geometry;
 	}
 
