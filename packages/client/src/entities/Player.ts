@@ -43,12 +43,7 @@ export default class Player {
 
 	public update(deltaMs: number) {
 		// set enemy velocity based on last server update
-		if (!this.isSelf)
-			this.velocity.set(
-				this.latestServerState.state.dx,
-				this.latestServerState.state.dy,
-				this.velocity.z
-			);
+		this.setEnemyVelocity();
 
 		// predict position and change this.position
 		this.predictPosition(deltaMs);
@@ -57,7 +52,7 @@ export default class Player {
 
 		this.buffer.add(currentState);
 
-		// reconcile from server update
+		// reconcile position from server update
 		if (this.latestServerState.wasConsumed === false) {
 			this.reconcilePosition(this.latestServerState.state);
 			this.latestServerState.wasConsumed = true;
@@ -68,16 +63,15 @@ export default class Player {
 
 		this.position.set(bufferEntry.x, bufferEntry.y, bufferEntry.z);
 		this.spaceShip.update();
+	}
 
-		// this.predictPosition(deltaMs);
-		// if (this.isSelf) {
-		// 	this.playerManager.updateState(deltaMs);
-		// 	this.spaceShip.updatePosition();
-		// } else {
-		// this.spaceShip.move(deltaMs);
-		// this.buffer.addLatest();
-		// }
-		// if (!this.isSelf) console.log(this.position.z);
+	private setEnemyVelocity() {
+		if (!this.isSelf)
+			this.velocity.set(
+				this.latestServerState.state.dx,
+				this.latestServerState.state.dy,
+				this.velocity.z
+			);
 	}
 
 	public reconcilePosition(serverState: PlayerState) {
@@ -104,13 +98,4 @@ export default class Player {
 		this.position.y += (this.velocity.y * deltaMs) / 100;
 		this.position.z += (this.currentSpeed * deltaMs) / 100;
 	}
-
-	// public updateBasedOnServer() {
-	// 	this.velocity.set(this.state.dx, this.state.dy, this.state.dz);
-
-	// 	this.spaceShip.position.lerp(
-	// 		{ x: this.state.x, y: this.state.y, z: this.state.z },
-	// 		0.5
-	// 	);
-	// }
 }
