@@ -44,22 +44,7 @@ export default class GameScene extends THREE.Scene {
 		// this.backgroundStars && this.backgroundStars.move(delta);
 		// // Update local player's spaceship
 		this.app.playerManager.update(deltaMs);
-		// this.updateHeartBeat();
-
-		// // Update opponent spaceships (positions should come from the server)
-		// for (const id in this.opponentSpaceships) {
-		// 	const opponentSpaceship = this.opponentSpaceships[id];
-		// 	// Assuming the opponent's position is synced from the server
-		// 	const opponentState = this.room.state.players.get(id);
-		// 	if (opponentState) {
-		// 		opponentSpaceship.position.set(
-		// 			opponentState.x,
-		// 			opponentState.y,
-		// 			opponentState.z
-		// 		);
-		// 	}
-		// 	// opponentSpaceship.move(delta); // Optional, depending on what "move" does
-		// }
+		this.updateHeartBeat();
 	}
 
 	private updateHeartBeat() {
@@ -73,9 +58,8 @@ export default class GameScene extends THREE.Scene {
 	}
 
 	public sendServerUpdate() {
-		// const latestState = this.app.playerManager.self.getLatestState();
-		const currentState = this.app.playerManager.self.getCurrentState();
+		const currentState = this.app?.playerManager?.self?.getCurrentState();
 
-		this.room.send<PlayerState>('move', currentState);
+		this.room?.send<PlayerState>('move', currentState);
 	}
 }

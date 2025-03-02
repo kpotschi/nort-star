@@ -3985,6 +3985,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lil-gui@npm:^0.20.0":
+  version: 0.20.0
+  resolution: "lil-gui@npm:0.20.0"
+  checksum: 10c0/17d1262baa547c15fb783af1e0d33e171f5323f83425692286c3e7167cbf075448dd7dbc48100862ff4dc4adecfd274b8fdb07e738ce308a4a724584ba70c205
+  languageName: node
+  linkType: hard
+
 "lines-and-columns@npm:^1.1.6":
   version: 1.2.4
   resolution: "lines-and-columns@npm:1.2.4"
@@ -4622,6 +4629,7 @@ __metadata:
     colyseus.js: "npm:^0.16.9"
     esbuild: "npm:^0.25.0"
     esbuild-plugin-copy: "npm:^2.1.1"
+    lil-gui: "npm:^0.20.0"
     three: "npm:^0.174.0"
   languageName: unknown
   linkType: soft

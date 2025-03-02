@@ -1,20 +1,27 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import GUI from 'lil-gui';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import App from '../app';
 
 export default class DebugManager extends GUI {
 	readonly app: App;
 	public stats: Stats;
+	public gui: GUI;
 	private orbitControls: OrbitControls;
 
 	constructor(app: App) {
 		super();
 		this.app = app;
 		this.addStats();
+		this.gui = new GUI();
 		this.initGui();
 		this.initControls();
+		this.initConnectionDebug();
+	}
+
+	private initConnectionDebug() {
+		this.gui.add(this.app.client, 'listenToServerUpdates');
 	}
 
 	private addStats() {

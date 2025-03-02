@@ -1,3 +1,4 @@
+import { bool } from './../../../../node_modules/@types/three/src/Three.TSL.d';
 import { Client, Room } from 'colyseus.js';
 import { State } from '../../../server/src/rooms/schema/MyRoomState';
 import App from '../app';
@@ -5,6 +6,8 @@ import App from '../app';
 export default class ConnectionManager extends Client {
 	readonly app: App;
 	public room: Room<State>;
+	public listenToServerUpdates: boolean = true;
+
 	constructor(app: App) {
 		super('http://localhost:2567');
 		this.app = app;

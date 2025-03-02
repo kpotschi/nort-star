@@ -1,4 +1,6 @@
 import App from '../app';
+import { CONFIG } from '../config/config';
+import * as THREE from 'three';
 
 export default class ControlsManager {
 	public app: App;
@@ -14,7 +16,9 @@ export default class ControlsManager {
 				set: (target, key: string, value: boolean) => {
 					if (target[key] !== value) {
 						target[key] = value;
-						this.updateInput(); // Only update when the key state changes
+						if (this.app.playerManager.self)
+							this.app.currentScene.sendServerUpdate();
+						// Only update when the key state changes
 					}
 					return true;
 				},
@@ -40,37 +44,5 @@ export default class ControlsManager {
 				this.keysPressed[key] = false;
 			}
 		});
-	}
-
-	public updateInput() {
-		const self = this.app.playerManager.self;
-
-		if (self) {
-			self.velocity.set(0, 0, self.velocity.z);
-
-			if (this.app.controls.keysPressed['w']) {
-				self.velocity.y += 1; // Forward
-			}
-			if (this.app.controls.keysPressed['s']) {
-				self.velocity.y -= 1; // Backward
-			}
-			if (this.app.controls.keysPressed['d']) {
-				self.velocity.x -= 1; // Left
-			}
-			if (this.app.controls.keysPressed['a']) {
-				self.velocity.x += 1; // Right
-			}
-
-			// Normalize to prevent faster diagonal movement
-			const length = Math.sqrt(
-				self.velocity.x * self.velocity.x + self.velocity.y * self.velocity.y
-			);
-			if (length > 0) {
-				self.velocity.x /= length;
-				self.velocity.y /= length;
-			}
-
-			this.app.currentScene.sendServerUpdate();
-		}
 	}
 }

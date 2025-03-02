@@ -1,3 +1,4 @@
+import { buffer } from './../../../../node_modules/@types/three/src/Three.TSL.d';
 import { CONFIG } from './../config/config';
 import * as THREE from 'three';
 import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
@@ -10,12 +11,14 @@ export default class Spaceship extends THREE.Mesh {
 	protected scene: GameScene;
 	readonly playerManager: PlayerManager;
 	readonly player: Player;
+	private currentSpeed: number;
 
 	constructor(scene: GameScene, player: Player) {
 		const material = Spaceship.getMaterial();
 		const geometry = Spaceship.getGeometry();
 		super(geometry, material);
 		this.player = player;
+		this.currentSpeed = CONFIG.GAMEPLAY.START_SPEED;
 
 		this.scene = scene;
 		this.scene.add(this);
@@ -101,7 +104,39 @@ export default class Spaceship extends THREE.Mesh {
 		return geometry;
 	}
 
-	public update() {
-		this.position.copy(this.player.position);
+	public updateRotation(deltaMs: number) {
+		this.rotateOnAxis(
+			this.player.direction,
+			THREE.MathUtils.degToRad(CONFIG.CONTROLS.PITCH_SPEED) * deltaMs
+		);
+	}
+
+	public predictPosition(deltaMs: number): void {
+		// Calculate movement speed based on delta time
+		const moveAmount = (this.currentSpeed * deltaMs) / 100;
+
+		// Create a forward vector (default forward is along Z-axis in THREE.js)
+		const forwardVector = new THREE.Vector3(0, 0, 1);
+
+		// Apply the ship's quaternion rotation to the forward vector
+		// This transforms the forward direction based on the ship's orientation
+		forwardVector.applyQuaternion(this.quaternion);
+
+		// Normalize the vector to ensure consistent speed regardless of direction
+		forwardVector.normalize();
+
+		// Scale by move amount
+		forwardVector.multiplyScalar(moveAmount);
+
+		// Add the movement to the current position
+		this.position.add(forwardVector);
+	}
+
+	public updateFromBuffer() {
+		const state = this.player.buffer.getLatestState();
+
+		if (state) {
+			this.position.set(state.x, state.y, state.z);
+		}
 	}
 }

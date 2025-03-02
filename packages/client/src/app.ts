@@ -37,6 +37,7 @@ export default class App {
 
 	constructor() {
 		this.debug = process.env.DEBUG === 'true';
+
 		this.clock = new THREE.Clock();
 		this.client = new ConnectionManager(this);
 		this.controls = new ControlsManager(this);

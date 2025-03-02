@@ -22,13 +22,6 @@ export default class StateBuffer extends Array<PlayerState> {
 		this.enforceBufferSize();
 	}
 
-	// public addLatest(): StateBuffer {
-	// 	const latestState = this.getCurrentState(this.player);
-	// 	this.add(latestState);
-	// 	this.enforceBufferSize();
-	// 	return this;
-	// }
-
 	private enforceBufferSize() {
 		if (this.length > this.maxBufferLength) {
 			this.shift();
@@ -36,78 +29,107 @@ export default class StateBuffer extends Array<PlayerState> {
 	}
 
 	public reconcile(serverState: PlayerState) {
-		// Find the most recent buffered state that is before or at the server timestamp
+		// Convert server timestamp to number for reliable comparison
+		const serverTimestamp = Number(serverState.timestamp);
 
-		let index = this.findIndex((bufferState) => {
-			return bufferState.timestamp > serverState.timestamp;
-		});
-		// // If there is no buffered state after the server's timestamp, there's nothing to reconcile
+		// Find the buffer state that corresponds to the server state time
+		let index = this.findIndex(
+			(bufferState) => Number(bufferState.timestamp) > serverTimestamp
+		);
+
+		// If we can't find a suitable state to reconcile with, exit
 		if (index === -1 || index === 0) return;
-		// // The previous buffered state is the one just before the server timestamp
+
+		// The previous buffered state is the one just before the server timestamp
 		const previousState = this[index - 1];
-		// // Calculate the error between the server's state and the predicted state
+
+		// Calculate position errors
 		const errorX = serverState.x - previousState.x;
 		const errorY = serverState.y - previousState.y;
 		const errorZ = serverState.z - previousState.z;
 
-		for (let i = index - 1; i < this.length; i++) {
-			this[i].x += errorX * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
-			this[i].y += errorY * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
-			this[i].z += errorZ * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+		// Calculate quaternion errors (this is a simplification - for small errors only)
+		const errorQX = serverState.qx - previousState.qx;
+		const errorQY = serverState.qy - previousState.qy;
+		const errorQZ = serverState.qz - previousState.qz;
+		const errorQW = serverState.qw - previousState.qw;
+
+		// Check if error is significant enough to reconcile
+		const positionErrorMagnitude = Math.sqrt(
+			errorX * errorX + errorY * errorY + errorZ * errorZ
+		);
+		const rotationErrorMagnitude = Math.sqrt(
+			errorQX * errorQX +
+				errorQY * errorQY +
+				errorQZ * errorQZ +
+				errorQW * errorQW
+		);
+
+		const POSITION_ERROR_THRESHOLD = 0.001; // Adjust based on your game scale
+		const ROTATION_ERROR_THRESHOLD = 0.001; // Adjust based on sensitivity needs
+
+		const needsPositionReconciliation =
+			positionErrorMagnitude > POSITION_ERROR_THRESHOLD;
+		const needsRotationReconciliation =
+			rotationErrorMagnitude > ROTATION_ERROR_THRESHOLD;
+
+		if (needsPositionReconciliation || needsRotationReconciliation) {
+			// Apply corrections to all states after the reconciliation point
+			for (let i = index - 1; i < this.length; i++) {
+				// Apply position corrections
+				if (needsPositionReconciliation) {
+					this[i].x += errorX * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+					this[i].y += errorY * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+					this[i].z += errorZ * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+				}
+
+				// Apply rotation corrections
+				if (needsRotationReconciliation) {
+					this[i].qx += errorQX * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+					this[i].qy += errorQY * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+					this[i].qz += errorQZ * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+					this[i].qw += errorQW * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+
+					// Normalize quaternion to ensure it remains valid
+					const length = Math.sqrt(
+						this[i].qx * this[i].qx +
+							this[i].qy * this[i].qy +
+							this[i].qz * this[i].qz +
+							this[i].qw * this[i].qw
+					);
+
+					if (length > 0) {
+						this[i].qx /= length;
+						this[i].qy /= length;
+						this[i].qz /= length;
+						this[i].qw /= length;
+					}
+				}
+			}
+
+			// Keep a few older states for interpolation if needed
+			const statesToKeep = 3;
+			const statesToRemove = Math.max(0, index - 1 - statesToKeep);
+
+			if (statesToRemove > 0) {
+				this.splice(0, statesToRemove);
+			} else {
+				// Just remove one old state if we can't remove the full amount
+				if (this.length > this.maxBufferLength - 10) {
+					this.shift();
+				}
+			}
+
+			// Debug output for significant corrections
+			if (this.player.isSelf && positionErrorMagnitude > 0.1) {
+				console.log(
+					`Large reconciliation: ${positionErrorMagnitude.toFixed(3)} units`
+				);
+			}
 		}
-		this.splice(0, index - 1);
-		// this.playerManager.self.spaceShip.updatePosition();
 	}
 
-	// public getCurrentState(player: Player): PlayerState {
-	// 	const state = new PlayerState();
-	// 	state.dx = player.velocity.x;
-	// 	state.dy = player.velocity.y;
-	// 	state.dz = player.velocity.z;
-	// 	state.timestamp = Date.now().toString();
-	// 	state.x = player.position.x;
-	// 	state.y = player.position.y;
-	// 	state.z = player.position.z;
-	// 	return state;
-	// }
-	// getInterpolatedState(currentTime: number): THREE.Vector3Like {
-	// 	// Find two states to interpolate between based on the current time
-	// 	if (this.buffer.length < 2) {
-	// 		return null; // Not enough states to interpolate
-	// 	}
-
-	// 	let previousState: PlayerState = null;
-	// 	let nextState: PlayerState = null;
-
-	// 	// Iterate through the buffer to find the right pair of states
-	// 	for (let i = 0; i < this.buffer.length - 1; i++) {
-	// 		if (
-	// 			Number(this.buffer[i].timestamp) <= currentTime &&
-	// 			Number(this.buffer[i + 1].timestamp) >= currentTime
-	// 		) {
-	// 			previousState = this.buffer[i];
-	// 			nextState = this.buffer[i + 1];
-	// 			break;
-	// 		}
-	// 	}
-
-	// 	if (previousState && nextState) {
-	// 		// Calculate the interpolation factor (0 to 1)
-	// 		const factor =
-	// 			(currentTime - Number(previousState.timestamp)) /
-	// 			(Number(nextState.timestamp) - Number(previousState.timestamp));
-
-	// 		// Interpolate x and y positions
-	// 		const interpolatedX =
-	// 			previousState.x + (nextState.x - previousState.x) * factor;
-	// 		const interpolatedY =
-	// 			previousState.y + (nextState.y - previousState.y) * factor;
-	// 		const interpolatedZ =
-	// 			previousState.z + (nextState.z - previousState.z) * factor;
-
-	// 		return { x: interpolatedX, y: interpolatedY, z: interpolatedZ };
-	// 	}
-
-	// 	return null; // If unable to find suitable states
-	// }
+	public getLatestState(): PlayerState {
+		return this[this.length - 1];
+	}
 }

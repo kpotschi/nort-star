@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import App from '../app';
 import PlayerManager from '../managers/PlayerManager';
+import StateBuffer from '../managers/StateBuffer';
 import { PlayerState } from './../../../server/src/rooms/schema/MyRoomState';
 import Spaceship from './Spaceship';
-import { CONFIG } from '../config/config';
-import StateBuffer from '../managers/StateBuffer';
 
 export default class Player {
 	readonly app: App;
@@ -12,10 +11,10 @@ export default class Player {
 	public spaceShip: Spaceship;
 	public state: PlayerState;
 	readonly playerManager: PlayerManager;
-	private buffer: StateBuffer;
-	private currentSpeed: number;
-	public velocity: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
-	public position: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+	public buffer: StateBuffer;
+
+	public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
+
 	public latestServerState: { state: PlayerState; wasConsumed: boolean } = {
 		state: null,
 		wasConsumed: null,
@@ -29,73 +28,84 @@ export default class Player {
 	) {
 		this.buffer = new StateBuffer(this, serverState);
 		this.app = app;
-		this.currentSpeed = CONFIG.GAMEPLAY.START_SPEED;
-		this.velocity = new THREE.Vector3(0, 0, 0);
+		// this.velocity = new THREE.Vector3(0, 0, 0);
 		this.isSelf = isSelf;
 		this.playerManager = playerManager;
 		this.spaceShip = new Spaceship(app.currentScene, this);
+		this.spaceShip.position.set(serverState.x, serverState.y, serverState.z);
+
 		this.latestServerState.wasConsumed = false;
 		this.latestServerState.state = serverState;
 		// set initial buffer record for spawn
-		this.position.set(serverState.x, serverState.y, serverState.z);
 		this.buffer.add(serverState);
 	}
 
 	public update(deltaMs: number) {
 		// set enemy velocity based on last server update
-		this.setEnemyVelocity();
+		this.updateDirection();
+
+		// apply rotation based on input
+		if (this.isSelf) {
+			this.spaceShip.updateRotation(deltaMs);
+		}
 
 		// predict position and change this.position
-		this.predictPosition(deltaMs);
-
+		this.spaceShip.predictPosition(deltaMs);
+		// this.spaceShip.quaternion.setFromEuler(this.rotation);
 		const currentState = this.getCurrentState();
-
 		this.buffer.add(currentState);
-
 		// reconcile position from server update
 		if (this.latestServerState.wasConsumed === false) {
 			this.reconcilePosition(this.latestServerState.state);
 			this.latestServerState.wasConsumed = true;
 		}
-
 		// position only to be set from latest(current) buffer entry
-		const bufferEntry = this.buffer[this.buffer.length - 1];
-
-		this.position.set(bufferEntry.x, bufferEntry.y, bufferEntry.z);
-		this.spaceShip.update();
+		this.spaceShip.updateFromBuffer();
 	}
 
-	private setEnemyVelocity() {
-		if (!this.isSelf)
-			this.velocity.set(
+	private updateDirection() {
+		if (this.isSelf) {
+			this.direction.set(0, 0, 0);
+			if (this.app.controls.keysPressed['w'] === true) this.direction.setX(1);
+
+			if (this.app.controls.keysPressed['s']) this.direction.setX(-1);
+
+			if (this.app.controls.keysPressed['a']) this.direction.setZ(-1);
+
+			if (this.app.controls.keysPressed['d']) this.direction.setZ(1);
+
+			this.direction.normalize();
+		}
+
+		if (!this.isSelf) {
+			this.direction.set(
 				this.latestServerState.state.dx,
-				this.latestServerState.state.dy,
-				this.velocity.z
+				0,
+				this.latestServerState.state.dz
 			);
+		}
 	}
 
 	public reconcilePosition(serverState: PlayerState) {
 		this.buffer.reconcile(serverState);
 	}
 
-	public getLatestState(): PlayerState {
-		return this.buffer[this.buffer.length - 1];
-	}
-
 	public getCurrentState(): PlayerState {
 		const state = new PlayerState();
-		state.dx = this.velocity.x;
-		state.dy = this.velocity.y;
 		state.timestamp = Date.now().toString();
-		state.x = this.position.x;
-		state.y = this.position.y;
-		state.z = this.position.z;
-		return state;
-	}
 
-	public predictPosition(deltaMs: number): void {
-		this.position.x += (this.velocity.x * deltaMs) / 100;
-		this.position.y += (this.velocity.y * deltaMs) / 100;
-		this.position.z += (this.currentSpeed * deltaMs) / 100;
+		state.dx = this.direction.x;
+		state.dy = this.direction.y;
+
+		state.x = this.spaceShip.position.x;
+		state.y = this.spaceShip.position.y;
+		state.z = this.spaceShip.position.z;
+
+		state.qw = this.spaceShip.quaternion.w;
+		state.qx = this.spaceShip.quaternion.x;
+		state.qy = this.spaceShip.quaternion.y;
+		state.qz = this.spaceShip.quaternion.z;
+
+		return state;
 	}
 }
