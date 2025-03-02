@@ -4,7 +4,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import App from '../app';
-import { CONFIG } from '../config/config';
+import { CONFIG } from '../../../../shared/config/config';
 
 export default class RenderManager extends THREE.WebGLRenderer {
 	readonly app: App;

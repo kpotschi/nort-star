@@ -12,8 +12,7 @@ export class PlayerState extends Schema {
 	@type('number') z = 0;
 
 	@type('number') dx = 0; // Direction X
-	@type('number') dy = 0; // Direction Y
-	@type('number') dz = 1; // Direction Z
+	@type('number') dz = 0; // Direction Z
 
 	@type('number') qw = 1; // Quaternion W
 	@type('number') qx = 0; // Quaternion X
@@ -24,7 +23,3 @@ export class PlayerState extends Schema {
 export class State extends Schema {
 	@type({ map: PlayerState }) players = new MapSchema<PlayerState>();
 }
-
-// export class LocalBufferPlayerState extends BaseState {
-// 	@type('number') timestamp = 0;
-// }

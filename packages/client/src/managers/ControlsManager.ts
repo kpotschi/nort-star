@@ -1,5 +1,5 @@
 import App from '../app';
-import { CONFIG } from '../config/config';
+import { CONFIG } from '../../../../shared/config/config';
 import * as THREE from 'three';
 
 export default class ControlsManager {

@@ -5,7 +5,7 @@ import {
 	State,
 } from '../../../server/src/rooms/schema/MyRoomState';
 import App from '../app';
-import { CONFIG } from '../config/config';
+import { CONFIG } from '../../../../shared/config/config';
 import BackgroundStars from '../entities/BackgroundStars';
 import Obstacle from '../entities/obstacles/Obstacle';
 import Sun from '../entities/Sun';

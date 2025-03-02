@@ -4,6 +4,7 @@ import PlayerManager from '../managers/PlayerManager';
 import StateBuffer from '../managers/StateBuffer';
 import { PlayerState } from './../../../server/src/rooms/schema/MyRoomState';
 import Spaceship from './Spaceship';
+import { updateRotation } from '../../../../shared/config/physics/movement';
 
 export default class Player {
 	readonly app: App;
@@ -13,7 +14,7 @@ export default class Player {
 	readonly playerManager: PlayerManager;
 	public buffer: StateBuffer;
 
-	public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
+	public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 
 	public latestServerState: { state: PlayerState; wasConsumed: boolean } = {
 		state: null,
@@ -28,38 +29,45 @@ export default class Player {
 	) {
 		this.buffer = new StateBuffer(this, serverState);
 		this.app = app;
-		// this.velocity = new THREE.Vector3(0, 0, 0);
+
 		this.isSelf = isSelf;
 		this.playerManager = playerManager;
 		this.spaceShip = new Spaceship(app.currentScene, this);
+		// set spawn
 		this.spaceShip.position.set(serverState.x, serverState.y, serverState.z);
 
 		this.latestServerState.wasConsumed = false;
 		this.latestServerState.state = serverState;
+
 		// set initial buffer record for spawn
 		this.buffer.add(serverState);
 	}
 
 	public update(deltaMs: number) {
-		// set enemy velocity based on last server update
+		// update own direction from keys, enemy from server
 		this.updateDirection();
 
-		// apply rotation based on input
+		// // apply rotation based on input
 		if (this.isSelf) {
-			this.spaceShip.updateRotation(deltaMs);
+			updateRotation(
+				deltaMs,
+				this.direction.x,
+				this.direction.z,
+				this.spaceShip.quaternion
+			);
 		}
 
-		// predict position and change this.position
-		this.spaceShip.predictPosition(deltaMs);
-		// this.spaceShip.quaternion.setFromEuler(this.rotation);
+		// // predict position and change this.position
+		// this.spaceShip.predictPosition(deltaMs);
+		// // this.spaceShip.quaternion.setFromEuler(this.rotation);
 		const currentState = this.getCurrentState();
 		this.buffer.add(currentState);
-		// reconcile position from server update
+		// // reconcile position from server update
 		if (this.latestServerState.wasConsumed === false) {
-			this.reconcilePosition(this.latestServerState.state);
+			this.buffer.reconcile(this.latestServerState.state);
 			this.latestServerState.wasConsumed = true;
 		}
-		// position only to be set from latest(current) buffer entry
+		// // position only to be set from latest(current) buffer entry
 		this.spaceShip.updateFromBuffer();
 	}
 
@@ -86,16 +94,12 @@ export default class Player {
 		}
 	}
 
-	public reconcilePosition(serverState: PlayerState) {
-		this.buffer.reconcile(serverState);
-	}
-
 	public getCurrentState(): PlayerState {
 		const state = new PlayerState();
 		state.timestamp = Date.now().toString();
 
 		state.dx = this.direction.x;
-		state.dy = this.direction.y;
+		state.dz = this.direction.z;
 
 		state.x = this.spaceShip.position.x;
 		state.y = this.spaceShip.position.y;

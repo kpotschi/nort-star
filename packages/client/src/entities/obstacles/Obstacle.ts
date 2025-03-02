@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import GameScene from '../../scenes/GameScene';
-import { CONFIG } from '../../config/config';
+import { CONFIG } from '../../../../../shared/config/config';
 
 export default class Obstacle extends THREE.Mesh {
 	protected scene: GameScene;

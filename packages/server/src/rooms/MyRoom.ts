@@ -1,14 +1,15 @@
-import { CONFIG } from './../../../client/src/config/config';
-import { Spawn } from './../../../client/src/config/types.d';
+import { updateRotation } from './../../../../shared/config/physics/movement';
 import { Client, Room } from 'colyseus';
+import * as THREE from 'three';
+import { CONFIG } from '../../../../shared/config/config';
+import { Spawn } from '../../../../shared/config/types.d';
 import { PlayerState, State } from './schema/MyRoomState';
-import { Quaternion, Vector3 } from 'three'; // Import Vector3 as well
 
 export class GameRoom extends Room<State> {
 	readonly maxClients = 2;
 	readonly spawnPositions: Spawn[] = [
-		{ x: 0, y: 0, z: -100 },
-		{ x: 0, y: 0, z: 100 },
+		{ x: 0, y: 0, z: -2 },
+		{ x: 0, y: 0, z: 2 },
 	];
 	readonly tickRate = 10;
 	state = new State();
@@ -19,52 +20,53 @@ export class GameRoom extends Room<State> {
 		this.onMessage('move', (client, data: PlayerState) => {
 			const player = this.state.players.get(client.sessionId);
 
-			const deltaMs = Number(data.timestamp) - Number(player.timestamp);
-			const deltaSeconds = deltaMs / 1000;
-
 			if (player) {
-				// Update quaternion from client data
-				player.qw = data.qw;
-				player.qx = data.qx;
-				player.qy = data.qy;
-				player.qz = data.qz;
+				const deltaMs = Number(data.timestamp) - Number(player.timestamp);
 
-				// Update input values
-				player.dx = Math.max(-1, Math.min(1, data.dx || 0));
-				player.dy = Math.max(-1, Math.min(1, data.dy || 0));
+				// Store the received direction from client
+				player.dx = data.dx;
+				player.dz = data.dz;
 
-				// Create quaternion from player data
-				const playerQuat = new Quaternion(
-					player.qx, // Note: THREE.js constructor is x,y,z,w order
+				const currentQuat = new THREE.Quaternion(
+					player.qx,
 					player.qy,
 					player.qz,
 					player.qw
 				);
 
-				// Calculate forward direction (Z-axis)
-				const forwardVector = new Vector3(0, 0, 1);
+				updateRotation(deltaMs, data.dx, data.dz, currentQuat);
 
-				// Apply quaternion to the forward vector
-				// In THREE.js, you use applyQuaternion to rotate a vector
-				forwardVector.applyQuaternion(playerQuat);
+				player.qw = currentQuat.w;
+				player.qx = currentQuat.x;
+				player.qy = currentQuat.y;
+				player.qz = currentQuat.z;
 
-				forwardVector.normalize();
+				// // Calculate forward movement
+				// // Create a forward vector (default forward is along Z-axis)
+				// const forwardVector = new THREE.Vector3(0, 0, 1);
 
-				// Apply forward movement
-				const moveAmount = (CONFIG.GAMEPLAY.START_SPEED * deltaMs) / 100;
-				player.x += forwardVector.x * moveAmount;
-				player.y += forwardVector.y * moveAmount;
-				player.z += forwardVector.z * moveAmount;
+				// // Apply the quaternion rotation to the forward vector
+				// forwardVector.applyQuaternion(currentQuat);
 
+				// // Normalize and scale by move amount
+				// forwardVector.normalize();
+				// const moveAmount = (CONFIG.GAMEPLAY.START_SPEED * deltaMs) / 100;
+
+				// // Update position
+				// player.x += forwardVector.x * moveAmount;
+				// player.y += forwardVector.y * moveAmount;
+				// player.z += forwardVector.z * moveAmount;
+
+				// Update timestamp
 				player.timestamp = data.timestamp;
 			}
 		});
 
 		// Server-side game loop
-		this.setSimulationInterval(
-			(delta) => this.updateLoop(delta),
-			1000 / this.tickRate
-		);
+		// this.setSimulationInterval(
+		// 	(delta) => this.updateLoop(delta),
+		// 	1000 / this.tickRate
+		// );
 	}
 
 	onJoin(client: Client, options: any) {
@@ -80,8 +82,7 @@ export class GameRoom extends Room<State> {
 		newPlayer.y = spawnPosition.y;
 		newPlayer.z = spawnPosition.z;
 		newPlayer.dx = 0;
-		newPlayer.dy = 0;
-		newPlayer.dz = 1;
+		newPlayer.dz = 0;
 
 		// Initialize quaternion to identity (no rotation)
 		newPlayer.qw = 1;

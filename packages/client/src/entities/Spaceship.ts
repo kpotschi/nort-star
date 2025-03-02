@@ -1,9 +1,6 @@
-import { buffer } from './../../../../node_modules/@types/three/src/Three.TSL.d';
-import { CONFIG } from './../config/config';
 import * as THREE from 'three';
-import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
+import { CONFIG } from '../../../../shared/config/config';
 import PlayerManager from '../managers/PlayerManager';
-import StateBuffer from '../managers/StateBuffer';
 import GameScene from '../scenes/GameScene';
 import Player from './Player';
 
@@ -104,13 +101,6 @@ export default class Spaceship extends THREE.Mesh {
 		return geometry;
 	}
 
-	public updateRotation(deltaMs: number) {
-		this.rotateOnAxis(
-			this.player.direction,
-			THREE.MathUtils.degToRad(CONFIG.CONTROLS.PITCH_SPEED) * deltaMs
-		);
-	}
-
 	public predictPosition(deltaMs: number): void {
 		// Calculate movement speed based on delta time
 		const moveAmount = (this.currentSpeed * deltaMs) / 100;
@@ -136,6 +126,7 @@ export default class Spaceship extends THREE.Mesh {
 		const state = this.player.buffer.getLatestState();
 
 		if (state) {
+			this.quaternion.set(state.qx, state.qy, state.qz, state.qw);
 			this.position.set(state.x, state.y, state.z);
 		}
 	}
