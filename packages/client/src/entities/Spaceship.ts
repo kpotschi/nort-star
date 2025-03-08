@@ -5,6 +5,7 @@ import GameScene from '../scenes/GameScene';
 import Player from './Player';
 
 export default class Spaceship extends THREE.Mesh {
+	declare material: THREE.MeshStandardMaterial;
 	protected scene: GameScene;
 	readonly playerManager: PlayerManager;
 	readonly player: Player;
@@ -16,12 +17,11 @@ export default class Spaceship extends THREE.Mesh {
 		super(geometry, material);
 		this.player = player;
 		this.currentSpeed = CONFIG.GAMEPLAY.START_SPEED;
-
 		this.scene = scene;
 		this.scene.add(this);
 	}
 
-	static getMaterial(): THREE.Material {
+	static getMaterial(): THREE.MeshStandardMaterial {
 		return new THREE.MeshStandardMaterial({
 			color: 0x00ff00,
 			metalness: 0, // Make it interact with light properly
@@ -101,6 +101,9 @@ export default class Spaceship extends THREE.Mesh {
 		return geometry;
 	}
 
+	public setColor(color: string) {
+		this.material.color = new THREE.Color(color);
+	}
 	public predictPosition(deltaMs: number): void {
 		// Calculate movement speed based on delta time
 		const moveAmount = (this.currentSpeed * deltaMs) / 100;

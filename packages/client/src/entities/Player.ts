@@ -7,11 +7,8 @@ import Spaceship from './Spaceship';
 import { updateRotation } from '../../../../shared/config/physics/movement';
 
 export default class Player {
-	readonly app: App;
-	public isSelf: boolean = false;
 	public spaceShip: Spaceship;
 	public state: PlayerState;
-	readonly playerManager: PlayerManager;
 	public buffer: StateBuffer;
 
 	public direction: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
@@ -22,20 +19,18 @@ export default class Player {
 	};
 
 	constructor(
-		app: App,
+		readonly app: App,
 		serverState: PlayerState,
-		playerManager: PlayerManager,
-		isSelf = false
+		readonly playerManager: PlayerManager,
+		readonly isSelf = false
 	) {
 		this.buffer = new StateBuffer(this, serverState);
-		this.app = app;
 
-		this.isSelf = isSelf;
-		this.playerManager = playerManager;
 		this.spaceShip = new Spaceship(app.currentScene, this);
+
 		// set spawn
 		this.spaceShip.position.set(serverState.x, serverState.y, serverState.z);
-
+		this.spaceShip.setColor(serverState.color);
 		this.latestServerState.wasConsumed = false;
 		this.latestServerState.state = serverState;
 

@@ -1,7 +1,7 @@
 {
 	"name": "nort-star-client",
 	"devDependencies": {
-		"@types/node": "^22.13.8",
+		"@types/node": "^22.13.10",
 		"@types/three": "^0.174.0",
 		"esbuild": "^0.25.0",
 		"esbuild-plugin-copy": "^2.1.1"

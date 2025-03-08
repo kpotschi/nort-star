@@ -18,6 +18,8 @@ export class PlayerState extends Schema {
 	@type('number') qx = 0; // Quaternion X
 	@type('number') qy = 0; // Quaternion Y
 	@type('number') qz = 0; // Quaternion Z
+
+	@type('string') color = '#ffffff'; // Default color
 }
 
 export class State extends Schema {

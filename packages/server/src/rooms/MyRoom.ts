@@ -1,9 +1,14 @@
 import { updateRotation } from './../../../../shared/config/physics/movement';
 import { Client, Room } from 'colyseus';
 import * as THREE from 'three';
-import { CONFIG } from '../../../../shared/config/CONFIG_SHARED';
 import { Spawn } from '../../../../shared/config/types.d';
 import { PlayerState, State } from './schema/MyRoomState';
+import CONFIG from '../../CONFIG_SERVER';
+
+interface MyUserData {
+	username: string;
+	score: number;
+}
 
 export class GameRoom extends Room<State> {
 	readonly maxClients = 2;
@@ -73,7 +78,7 @@ export class GameRoom extends Room<State> {
 		this.handleJoin(client);
 	}
 
-	private handleJoin(client: Client<any, any>) {
+	private handleJoin(client: Client<MyUserData, any>) {
 		const spawnPositionIndex = this.clients.length - 1;
 		const spawnPosition = this.spawnPositions[spawnPositionIndex];
 
@@ -91,6 +96,9 @@ export class GameRoom extends Room<State> {
 		newPlayer.qz = 0;
 
 		newPlayer.timestamp = Date.now().toString();
+
+		newPlayer.color =
+			CONFIG.SPAWN_COLORS[spawnPositionIndex % CONFIG.SPAWN_COLORS.length];
 
 		this.state.players.set(client.sessionId, newPlayer);
 		console.log(client.sessionId, ' joined ');
