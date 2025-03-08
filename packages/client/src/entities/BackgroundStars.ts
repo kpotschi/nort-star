@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import GameScene from '../scenes/GameScene';
-import { CONFIG } from '../../../../shared/config/config';
 
 export default class BackgroundStars {
 	private scene: GameScene;

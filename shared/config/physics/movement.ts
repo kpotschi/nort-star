@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG } from '../config';
+import CONFIG_SHARED from '../CONFIG_SHARED';
 
 export const updateRotation = (
 	deltaMs: number,
@@ -12,8 +12,8 @@ export const updateRotation = (
 	const rollAxis = new THREE.Vector3(0, 0, 1); // Z-axis for roll
 
 	// Get input based on player direction
-	const pitchAmount = (dx * CONFIG.CONTROLS.PITCH_SPEED * deltaMs) / 100;
-	const rollAmount = (dz * CONFIG.CONTROLS.ROLL_SPEED * deltaMs) / 100;
+	const pitchAmount = (dx * CONFIG_SHARED.CONTROLS.PITCH_SPEED * deltaMs) / 100;
+	const rollAmount = (dz * CONFIG_SHARED.CONTROLS.ROLL_SPEED * deltaMs) / 100;
 
 	// Create rotation quaternions
 	const pitchQuat = new THREE.Quaternion().setFromAxisAngle(

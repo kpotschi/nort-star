@@ -14,6 +14,7 @@ import ScaleManager from './managers/ScaleManager';
 import { UiManager } from './managers/UiManager';
 import GameScene from './scenes/GameScene';
 import PlayerManager from './managers/PlayerManager';
+
 if (process.env.DEBUG === 'true') {
 	console.log('loaded esbuild watch listener');
 	new EventSource('/esbuild').addEventListener('change', () =>

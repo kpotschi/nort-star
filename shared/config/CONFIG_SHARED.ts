@@ -1,15 +1,8 @@
-export const CONFIG = {
+const CONFIG_SHARED = {
 	GAMEPLAY: {
 		START_SPEED: 1,
 	},
-	RENDER: {
-		PASS: {
-			THRESHOLD: 0,
-			STRENGTH: 0.5,
-			RADIUS: 0,
-			EXPOSURE: 1,
-		},
-	},
+
 	PLAYER: {
 		// SPEED: 10,
 	},
@@ -47,3 +40,5 @@ export const CONFIG = {
 		BUFFER_LENGTH: 100,
 	},
 };
+
+export default CONFIG_SHARED;

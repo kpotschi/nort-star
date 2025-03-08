@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG } from '../../../../shared/config/config';
+import CONFIG from '../CONFIG_CLIENT';
 import PlayerManager from '../managers/PlayerManager';
 import GameScene from '../scenes/GameScene';
 import Player from './Player';

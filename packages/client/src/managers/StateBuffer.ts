@@ -1,7 +1,7 @@
 import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
 import * as THREE from 'three';
-import { CONFIG } from '../../../../shared/config/config';
 import Player from '../entities/Player';
+import CONFIG from '../CONFIG_CLIENT';
 
 export default class StateBuffer extends Array<PlayerState> {
 	// readonly buffer: PlayerState[];

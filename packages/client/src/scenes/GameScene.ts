@@ -5,7 +5,7 @@ import {
 	State,
 } from '../../../server/src/rooms/schema/MyRoomState';
 import App from '../app';
-import { CONFIG } from '../../../../shared/config/config';
+import CONFIG from '../CONFIG_CLIENT';
 import BackgroundStars from '../entities/BackgroundStars';
 import Obstacle from '../entities/obstacles/Obstacle';
 import Sun from '../entities/Sun';
@@ -33,11 +33,13 @@ export default class GameScene extends THREE.Scene {
 	}
 
 	private createLighting() {
-		this.add(new THREE.AmbientLight(0xcccccc, 0.6));
+		this.add(new THREE.AmbientLight(0xcccccc, 0.3));
+
+		this.add(new THREE.DirectionalLight(0xffffff, 1));
 	}
 
 	private createBackground() {
-		this.backgroundStars = new BackgroundStars(this);
+		// this.backgroundStars = new BackgroundStars(this);
 	}
 
 	public update(deltaMs: number) {

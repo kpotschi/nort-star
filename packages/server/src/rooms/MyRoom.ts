@@ -1,7 +1,7 @@
 import { updateRotation } from './../../../../shared/config/physics/movement';
 import { Client, Room } from 'colyseus';
 import * as THREE from 'three';
-import { CONFIG } from '../../../../shared/config/config';
+import { CONFIG } from '../../../../shared/config/CONFIG_SHARED';
 import { Spawn } from '../../../../shared/config/types.d';
 import { PlayerState, State } from './schema/MyRoomState';
 

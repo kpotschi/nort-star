@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import GameScene from '../../scenes/GameScene';
 import Obstacle from './Obstacle';
-import { CONFIG } from '../../../../../shared/config/config';
+import CONFIG from '../../CONFIG_CLIENT';
 
 export default class Ring extends Obstacle {
 	constructor(scene: GameScene, index: number) {

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import App from '../app';
-import { CONFIG } from '../../../../shared/config/config';
 import Player from '../entities/Player';
+import CONFIG from '../CONFIG_CLIENT';
 
 export default class CameraManager extends THREE.PerspectiveCamera {
 	private app: App;

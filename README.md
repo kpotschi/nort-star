@@ -1,4 +1,3 @@
-# TODO
+# NORT-STAR
 
-- new `class Buffer extends Array<BufferState>` refactor on new branch
-- keep all localbufferstates on the player and consume all new serverstates directly
+A multiplayer space experience to not only explore far away galactic bodies, but also the depths of buffering, shaders, state management and a lot more.
