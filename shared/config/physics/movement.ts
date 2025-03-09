@@ -31,11 +31,10 @@ export const updateRotation = (
 
 export const getForwardMovement = (
 	deltaMs: number,
-	quaternion: THREE.QuaternionLike,
-	speed: number
+	quaternion: THREE.QuaternionLike
 ): THREE.Vector3 => {
 	const forwardVector = new THREE.Vector3(0, 0, 1);
-	const moveAmount = (speed * deltaMs) / 100;
+	const moveAmount = (CONFIG_SHARED.GAMEPLAY.START_SPEED * deltaMs) / 100;
 
 	forwardVector.applyQuaternion(quaternion);
 

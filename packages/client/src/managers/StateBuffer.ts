@@ -1,5 +1,8 @@
 import * as THREE from 'three';
-import { updateRotation } from '../../../../shared/config/physics/movement';
+import {
+	getForwardMovement,
+	updateRotation,
+} from '../../../../shared/config/physics/movement';
 import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
 import CONFIG from '../CONFIG_CLIENT';
 import Player from '../entities/Player';
@@ -41,6 +44,7 @@ export default class StateBuffer extends Array<PlayerState> {
 
 		for (let i = index; i < this.length; i++) {
 			const deltaMs = Number(this[i].timestamp) - Number(this[i - 1].timestamp);
+			console.log(deltaMs);
 
 			// rotation
 			const quat = new THREE.Quaternion(
@@ -52,20 +56,13 @@ export default class StateBuffer extends Array<PlayerState> {
 
 			updateRotation(deltaMs, this[i - 1].dx, this[i - 1].dz, quat);
 
+			// position
+			const forwardVector = getForwardMovement(deltaMs, quat);
+
 			this[i].qw = quat.w;
 			this[i].qx = quat.x;
 			this[i].qy = quat.y;
 			this[i].qz = quat.z;
-
-			// position
-			const forwardVector = new THREE.Vector3(0, 0, 1);
-			const moveAmount = (1 * deltaMs) / 100;
-
-			forwardVector.applyQuaternion(quat);
-
-			forwardVector.normalize();
-
-			forwardVector.multiplyScalar(moveAmount);
 
 			this[i].x = this[i - 1].x + forwardVector.x;
 			this[i].y = this[i - 1].y + forwardVector.y;

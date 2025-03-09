@@ -30,6 +30,7 @@ export class GameRoom extends Room<State> {
 
 			if (player) {
 				const deltaMs = Number(data.timestamp) - Number(player.timestamp);
+				console.log(deltaMs);
 
 				// Store the received direction from client
 				player.dx = data.dx;
@@ -50,11 +51,7 @@ export class GameRoom extends Room<State> {
 				player.qy = currentQuat.y;
 				player.qz = currentQuat.z;
 
-				const forwardVector = getForwardMovement(
-					deltaMs,
-					currentQuat,
-					CONFIG.GAMEPLAY.START_SPEED
-				);
+				const forwardVector = getForwardMovement(deltaMs, currentQuat);
 
 				// Update position
 				player.x += forwardVector.x;
