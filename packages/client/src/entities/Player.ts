@@ -43,14 +43,14 @@ export default class Player {
 		this.updateDirection();
 
 		// // apply rotation based on input
-		if (this.isSelf) {
-			updateRotation(
-				deltaMs,
-				this.direction.x,
-				this.direction.z,
-				this.spaceShip.quaternion
-			);
-		}
+		// if (this.isSelf) {
+		updateRotation(
+			deltaMs,
+			this.direction.x,
+			this.direction.z,
+			this.spaceShip.quaternion
+		);
+		// }
 
 		// // predict position and change this.position
 		// this.spaceShip.predictPosition(deltaMs);

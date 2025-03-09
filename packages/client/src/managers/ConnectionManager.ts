@@ -9,7 +9,7 @@ export default class ConnectionManager extends Client {
 	public listenToServerUpdates: boolean = true;
 
 	constructor(app: App) {
-		super('http://localhost:2567');
+		super('http://192.168.178.29:2567');
 		this.app = app;
 	}
 
