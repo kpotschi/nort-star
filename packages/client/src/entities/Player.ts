@@ -44,6 +44,7 @@ export default class Player {
 
 		// // apply rotation based on input
 		// if (this.isSelf) {
+
 		updateRotation(
 			deltaMs,
 			this.direction.x,

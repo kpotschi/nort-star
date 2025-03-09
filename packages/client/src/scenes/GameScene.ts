@@ -39,12 +39,12 @@ export default class GameScene extends THREE.Scene {
 	}
 
 	private createBackground() {
-		// this.backgroundStars = new BackgroundStars(this);
+		this.backgroundStars = new BackgroundStars(this);
 	}
 
 	public update(deltaMs: number) {
 		// this.backgroundStars && this.backgroundStars.move(delta);
-		// // Update local player's spaceship
+
 		this.app.playerManager.update(deltaMs);
 		this.updateHeartBeat();
 	}
