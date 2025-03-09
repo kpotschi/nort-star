@@ -4,7 +4,6 @@ import Player from '../entities/Player';
 import CONFIG from '../CONFIG_CLIENT';
 
 export default class StateBuffer extends Array<PlayerState> {
-	// readonly buffer: PlayerState[];
 	private maxBufferLength: number;
 	readonly player: Player;
 
@@ -18,7 +17,6 @@ export default class StateBuffer extends Array<PlayerState> {
 
 	public add(state: PlayerState) {
 		this.push(state);
-
 		this.enforceBufferSize();
 	}
 
@@ -29,13 +27,10 @@ export default class StateBuffer extends Array<PlayerState> {
 	}
 
 	public reconcile(serverState: PlayerState) {
-		// Convert server timestamp to number for reliable comparison
-		const serverTimestamp = Number(serverState.timestamp);
-
 		// Find the buffer state that corresponds to the server state time
-		let index = this.findIndex(
-			(bufferState) => Number(bufferState.timestamp) > serverTimestamp
-		);
+		let index = this.findIndex((bufferState) => {
+			return Number(bufferState.timestamp) > Number(serverState.timestamp);
+		});
 
 		// If we can't find a suitable state to reconcile with, exit
 		if (index === -1 || index === 0) return;
@@ -58,6 +53,7 @@ export default class StateBuffer extends Array<PlayerState> {
 		const positionErrorMagnitude = Math.sqrt(
 			errorX * errorX + errorY * errorY + errorZ * errorZ
 		);
+
 		const rotationErrorMagnitude = Math.sqrt(
 			errorQX * errorQX +
 				errorQY * errorQY +
@@ -77,18 +73,13 @@ export default class StateBuffer extends Array<PlayerState> {
 			// Apply corrections to all states after the reconciliation point
 			for (let i = index - 1; i < this.length; i++) {
 				// Apply position corrections
-				if (needsPositionReconciliation) {
-					this[i].x += errorX * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
-					this[i].y += errorY * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
-					this[i].z += errorZ * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
-				}
 
 				// Apply rotation corrections
 				if (needsRotationReconciliation) {
-					this[i].qx += errorQX * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
-					this[i].qy += errorQY * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
-					this[i].qz += errorQZ * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
-					this[i].qw += errorQW * CONFIG.SERVER_RECON.POSITION_LERP_FACTOR;
+					this[i].qx += errorQX * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
+					this[i].qy += errorQY * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
+					this[i].qz += errorQZ * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
+					this[i].qw += errorQW * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
 
 					// Normalize quaternion to ensure it remains valid
 					const length = Math.sqrt(
@@ -104,6 +95,12 @@ export default class StateBuffer extends Array<PlayerState> {
 						this[i].qz /= length;
 						this[i].qw /= length;
 					}
+				}
+
+				if (needsPositionReconciliation) {
+					this[i].x += errorX * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
+					this[i].y += errorY * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
+					this[i].z += errorZ * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
 				}
 			}
 
@@ -124,6 +121,12 @@ export default class StateBuffer extends Array<PlayerState> {
 			if (this.player.isSelf && positionErrorMagnitude > 0.1) {
 				console.log(
 					`Large reconciliation: ${positionErrorMagnitude.toFixed(3)} units`
+				);
+			}
+
+			if (this.player.isSelf && rotationErrorMagnitude > 0.1) {
+				console.log(
+					`Large reconciliation: ${rotationErrorMagnitude.toFixed(3)} units`
 				);
 			}
 		}

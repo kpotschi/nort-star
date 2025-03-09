@@ -29,13 +29,7 @@ const CONFIG_SHARED = {
 			z: -20,
 		},
 	},
-	SERVER_RECON: {
-		HEARTBEAT_MS: 100,
-		POSITION_LERP_FACTOR: 0.3,
-		ROTATION_LERP_FACTOR: 0.3, // Add this line
-		POSITION_ERROR_THRESHOLD: 0.001, // Add this line
-		ROTATION_ERROR_THRESHOLD: 0.001, // Add this line
-	},
+
 	CLIENT_CONFIG: {
 		BUFFER_LENGTH: 100,
 	},

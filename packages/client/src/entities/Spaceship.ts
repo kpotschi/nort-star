@@ -3,6 +3,7 @@ import CONFIG from '../CONFIG_CLIENT';
 import PlayerManager from '../managers/PlayerManager';
 import GameScene from '../scenes/GameScene';
 import Player from './Player';
+import { getForwardMovement } from '../../../../shared/config/physics/movement';
 
 export default class Spaceship extends THREE.Mesh {
 	declare material: THREE.MeshStandardMaterial;
@@ -104,22 +105,13 @@ export default class Spaceship extends THREE.Mesh {
 	public setColor(color: string) {
 		this.material.color = new THREE.Color(color);
 	}
-	public predictPosition(deltaMs: number): void {
-		// Calculate movement speed based on delta time
-		const moveAmount = (this.currentSpeed * deltaMs) / 100;
 
-		// Create a forward vector (default forward is along Z-axis in THREE.js)
-		const forwardVector = new THREE.Vector3(0, 0, 1);
-
-		// Apply the ship's quaternion rotation to the forward vector
-		// This transforms the forward direction based on the ship's orientation
-		forwardVector.applyQuaternion(this.quaternion);
-
-		// Normalize the vector to ensure consistent speed regardless of direction
-		forwardVector.normalize();
-
-		// Scale by move amount
-		forwardVector.multiplyScalar(moveAmount);
+	public updatePosition(deltaMs: number): void {
+		const forwardVector = getForwardMovement(
+			deltaMs,
+			this.quaternion,
+			this.currentSpeed
+		);
 
 		// Add the movement to the current position
 		this.position.add(forwardVector);

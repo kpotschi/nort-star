@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import CONFIG_SHARED from '../CONFIG_SHARED';
+import { PlayerState } from '../../../packages/server/src/rooms/schema/MyRoomState';
 
 export const updateRotation = (
 	deltaMs: number,
@@ -7,15 +8,12 @@ export const updateRotation = (
 	dz: number,
 	target: THREE.Quaternion
 ): void => {
-	// Create quaternions for pitch and roll
 	const pitchAxis = new THREE.Vector3(1, 0, 0); // X-axis for pitch
 	const rollAxis = new THREE.Vector3(0, 0, 1); // Z-axis for roll
 
-	// Get input based on player direction
 	const pitchAmount = (dx * CONFIG_SHARED.CONTROLS.PITCH_SPEED * deltaMs) / 100;
 	const rollAmount = (dz * CONFIG_SHARED.CONTROLS.ROLL_SPEED * deltaMs) / 100;
 
-	// Create rotation quaternions
 	const pitchQuat = new THREE.Quaternion().setFromAxisAngle(
 		pitchAxis,
 		pitchAmount
@@ -25,10 +23,25 @@ export const updateRotation = (
 		rollAmount
 	);
 
-	// Apply the rotations to the ship's quaternion (order matters!)
-	target.premultiply(pitchQuat);
-	target.premultiply(rollQuat);
+	target.multiply(pitchQuat);
+	target.multiply(rollQuat);
 
-	// Normalize the quat to prevent drift
 	target.normalize();
+};
+
+export const getForwardMovement = (
+	deltaMs: number,
+	quaternion: THREE.QuaternionLike,
+	speed: number
+): THREE.Vector3 => {
+	const forwardVector = new THREE.Vector3(0, 0, 1);
+	const moveAmount = (speed * deltaMs) / 100;
+
+	forwardVector.applyQuaternion(quaternion);
+
+	forwardVector.normalize();
+
+	forwardVector.multiplyScalar(moveAmount);
+
+	return forwardVector;
 };

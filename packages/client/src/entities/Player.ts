@@ -42,8 +42,7 @@ export default class Player {
 		// update own direction from keys, enemy from server
 		this.updateDirection();
 
-		// // apply rotation based on input
-		// if (this.isSelf) {
+		// apply rotation based on input
 
 		updateRotation(
 			deltaMs,
@@ -51,19 +50,19 @@ export default class Player {
 			this.direction.z,
 			this.spaceShip.quaternion
 		);
-		// }
 
-		// // predict position and change this.position
-		// this.spaceShip.predictPosition(deltaMs);
-		// // this.spaceShip.quaternion.setFromEuler(this.rotation);
+		// predict position and change this.position
+		this.spaceShip.updatePosition(deltaMs);
+
 		const currentState = this.getCurrentState();
 		this.buffer.add(currentState);
-		// // reconcile position from server update
+
+		// reconcile position from server update
 		if (this.latestServerState.wasConsumed === false) {
 			this.buffer.reconcile(this.latestServerState.state);
 			this.latestServerState.wasConsumed = true;
 		}
-		// // position only to be set from latest(current) buffer entry
+		// position only to be set from latest(current) buffer entry
 		this.spaceShip.updateFromBuffer();
 	}
 
@@ -78,7 +77,7 @@ export default class Player {
 
 			if (this.app.controls.keysPressed['d']) this.direction.setZ(1);
 
-			this.direction.normalize();
+			// this.direction.normalize();
 		}
 
 		if (!this.isSelf) {

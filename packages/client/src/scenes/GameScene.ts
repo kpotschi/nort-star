@@ -13,9 +13,7 @@ import Sun from '../entities/Sun';
 export default class GameScene extends THREE.Scene {
 	private backgroundStars: BackgroundStars;
 	public app: App;
-	readonly sendRate: number = CONFIG.SERVER_RECON.HEARTBEAT_MS;
 
-	private lastHeartBeatTime: number = 0;
 	private pointLight: THREE.PointLight;
 	private obstacles: Obstacle[];
 	private sun: Sun;
@@ -46,22 +44,6 @@ export default class GameScene extends THREE.Scene {
 		// this.backgroundStars && this.backgroundStars.move(delta);
 
 		this.app.playerManager.update(deltaMs);
-		this.updateHeartBeat();
-	}
-
-	private updateHeartBeat() {
-		const currentTime = Date.now();
-
-		if (currentTime - this.lastHeartBeatTime > this.sendRate) {
-			this.sendServerUpdate();
-
-			this.lastHeartBeatTime = currentTime; // Update last send time
-		}
-	}
-
-	public sendServerUpdate() {
-		const currentState = this.app?.playerManager?.self?.getCurrentState();
-
-		this.room?.send<PlayerState>('move', currentState);
+		this.app.client.update();
 	}
 }

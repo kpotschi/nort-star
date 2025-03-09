@@ -13,6 +13,10 @@ export default config({
 		 * Define your room handlers:
 		 */
 		gameServer.define('my_room', GameRoom);
+		if (process.env.NODE_ENV !== 'production') {
+			// simulate 200ms latency between server and client.
+			gameServer.simulateLatency(200);
+		}
 	},
 
 	initializeExpress: (app) => {
@@ -45,7 +49,7 @@ export default config({
 		 * Before before gameServer.listen() is called.
 		 */
 	},
-	options: {
-		devMode: true,
-	},
+	// options: {
+	// 	devMode: true,
+	// },
 });

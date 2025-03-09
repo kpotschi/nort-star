@@ -1,9 +1,9 @@
-import { updateRotation } from './../../../../shared/config/physics/movement';
 import { Client, Room } from 'colyseus';
 import * as THREE from 'three';
 import { Spawn } from '../../../../shared/config/types.d';
-import { PlayerState, State } from './schema/MyRoomState';
 import CONFIG from '../../CONFIG_SERVER';
+import { updateRotation } from './../../../../shared/config/physics/movement';
+import { PlayerState, State } from './schema/MyRoomState';
 
 interface MyUserData {
 	username: string;
@@ -41,26 +41,22 @@ export class GameRoom extends Room<State> {
 
 				updateRotation(deltaMs, data.dx, data.dz, currentQuat);
 
+				// const forwardVector = getForwardMovement(
+				// 	deltaMs,
+				// 	currentQuat,
+				// 	CONFIG.GAMEPLAY.START_SPEED
+				// );
+
+				// update rotation
 				player.qw = currentQuat.w;
 				player.qx = currentQuat.x;
 				player.qy = currentQuat.y;
 				player.qz = currentQuat.z;
 
-				// // Calculate forward movement
-				// // Create a forward vector (default forward is along Z-axis)
-				// const forwardVector = new THREE.Vector3(0, 0, 1);
-
-				// // Apply the quaternion rotation to the forward vector
-				// forwardVector.applyQuaternion(currentQuat);
-
-				// // Normalize and scale by move amount
-				// forwardVector.normalize();
-				// const moveAmount = (CONFIG.GAMEPLAY.START_SPEED * deltaMs) / 100;
-
-				// // Update position
-				// player.x += forwardVector.x * moveAmount;
-				// player.y += forwardVector.y * moveAmount;
-				// player.z += forwardVector.z * moveAmount;
+				// Update position
+				// player.x += forwardVector.x;
+				// player.y += forwardVector.y;
+				// player.z += forwardVector.z;
 
 				// Update timestamp
 				player.timestamp = data.timestamp;

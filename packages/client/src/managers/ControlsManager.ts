@@ -14,8 +14,7 @@ export default class ControlsManager {
 				set: (target, key: string, value: boolean) => {
 					if (target[key] !== value) {
 						target[key] = value;
-						if (this.app.playerManager.self)
-							this.app.currentScene.sendServerUpdate();
+						if (this.app.playerManager.self) this.app.client.sendServerUpdate();
 						// Only update when the key state changes
 					}
 					return true;
