@@ -103,6 +103,7 @@ export default class Spaceship extends THREE.Mesh {
 	}
 
 	public setColor(color: string) {
+		console.log(color);
 		this.material.color = new THREE.Color(color);
 	}
 

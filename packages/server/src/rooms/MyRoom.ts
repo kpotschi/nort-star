@@ -2,7 +2,10 @@ import { Client, Room } from 'colyseus';
 import * as THREE from 'three';
 import { Spawn } from '../../../../shared/config/types.d';
 import CONFIG from '../../CONFIG_SERVER';
-import { updateRotation } from './../../../../shared/config/physics/movement';
+import {
+	getForwardMovement,
+	updateRotation,
+} from './../../../../shared/config/physics/movement';
 import { PlayerState, State } from './schema/MyRoomState';
 
 interface MyUserData {
@@ -41,22 +44,22 @@ export class GameRoom extends Room<State> {
 
 				updateRotation(deltaMs, data.dx, data.dz, currentQuat);
 
-				// const forwardVector = getForwardMovement(
-				// 	deltaMs,
-				// 	currentQuat,
-				// 	CONFIG.GAMEPLAY.START_SPEED
-				// );
-
 				// update rotation
 				player.qw = currentQuat.w;
 				player.qx = currentQuat.x;
 				player.qy = currentQuat.y;
 				player.qz = currentQuat.z;
 
+				const forwardVector = getForwardMovement(
+					deltaMs,
+					currentQuat,
+					CONFIG.GAMEPLAY.START_SPEED
+				);
+
 				// Update position
-				// player.x += forwardVector.x;
-				// player.y += forwardVector.y;
-				// player.z += forwardVector.z;
+				player.x += forwardVector.x;
+				player.y += forwardVector.y;
+				player.z += forwardVector.z;
 
 				// Update timestamp
 				player.timestamp = data.timestamp;
@@ -75,8 +78,8 @@ export class GameRoom extends Room<State> {
 	}
 
 	private handleJoin(client: Client<MyUserData, any>) {
-		const spawnPositionIndex = this.clients.length - 1;
-		const spawnPosition = this.spawnPositions[spawnPositionIndex];
+		const clientIndex = this.clients.length - 1;
+		const spawnPosition = this.spawnPositions[clientIndex];
 
 		const newPlayer = new PlayerState();
 		newPlayer.x = spawnPosition.x;
@@ -91,13 +94,13 @@ export class GameRoom extends Room<State> {
 		newPlayer.qy = 0;
 		newPlayer.qz = 0;
 
-		newPlayer.timestamp = Date.now().toString();
+		newPlayer.timestamp = Date.now();
 
 		newPlayer.color =
-			CONFIG.SPAWN_COLORS[spawnPositionIndex % CONFIG.SPAWN_COLORS.length];
+			CONFIG.SPAWN_COLORS[clientIndex % CONFIG.SPAWN_COLORS.length];
 
 		this.state.players.set(client.sessionId, newPlayer);
-		console.log(client.sessionId, ' joined ');
+		console.log(client.sessionId, ' joined with color ', newPlayer.color);
 	}
 
 	onLeave(client: Client, consented: boolean) {

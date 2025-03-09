@@ -6,7 +6,7 @@ export class Inputs extends Schema {
 
 export class PlayerState extends Schema {
 	@type(Inputs) inputs = new Inputs();
-	@type('string') timestamp = Date.now().toString();
+	@type('number') timestamp = Date.now();
 	@type('number') x = 0;
 	@type('number') y = 0;
 	@type('number') z = 0;

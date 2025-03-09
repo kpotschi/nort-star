@@ -1,18 +1,22 @@
-import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
 import * as THREE from 'three';
-import Player from '../entities/Player';
+import {
+	getForwardMovement,
+	updateRotation,
+} from '../../../../shared/config/physics/movement';
+import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
 import CONFIG from '../CONFIG_CLIENT';
+import Player from '../entities/Player';
 
 export default class StateBuffer extends Array<PlayerState> {
 	private maxBufferLength: number;
 	readonly player: Player;
 
-	constructor(player: Player, initialState: PlayerState = new PlayerState()) {
+	constructor(player: Player) {
 		super();
 		this.player = player;
 
 		this.maxBufferLength = CONFIG.CLIENT_CONFIG.BUFFER_LENGTH;
-		this.add(initialState);
+		// this.add(initialState);
 	}
 
 	public add(state: PlayerState) {
@@ -28,108 +32,114 @@ export default class StateBuffer extends Array<PlayerState> {
 
 	public reconcile(serverState: PlayerState) {
 		// Find the buffer state that corresponds to the server state time
-		let index = this.findIndex((bufferState) => {
-			return Number(bufferState.timestamp) > Number(serverState.timestamp);
-		});
+		let index = this.findIndex(
+			(bufferState) =>
+				Number(bufferState.timestamp) > Number(serverState.timestamp)
+		);
 
 		// If we can't find a suitable state to reconcile with, exit
 		if (index === -1 || index === 0) return;
 
-		// The previous buffered state is the one just before the server timestamp
-		const previousState = this[index - 1];
+		// For debugging: check if the timestamp matches exactly
+		const exactMatch = this[index - 1].timestamp === serverState.timestamp;
 
-		// Calculate position errors
-		const errorX = serverState.x - previousState.x;
-		const errorY = serverState.y - previousState.y;
-		const errorZ = serverState.z - previousState.z;
+		// Get the client prediction for this timestamp
+		const clientPrediction = this[index - 1];
 
-		// Calculate quaternion errors (this is a simplification - for small errors only)
-		const errorQX = serverState.qx - previousState.qx;
-		const errorQY = serverState.qy - previousState.qy;
-		const errorQZ = serverState.qz - previousState.qz;
-		const errorQW = serverState.qw - previousState.qw;
+		// Calculate position error
+		const positionError = {
+			x: serverState.x - clientPrediction.x,
+			y: serverState.y - clientPrediction.y,
+			z: serverState.z - clientPrediction.z,
+		};
 
-		// Check if error is significant enough to reconcile
-		const positionErrorMagnitude = Math.sqrt(
-			errorX * errorX + errorY * errorY + errorZ * errorZ
+		const errorMagnitude = Math.sqrt(
+			positionError.x * positionError.x +
+				positionError.y * positionError.y +
+				positionError.z * positionError.z
 		);
 
-		const rotationErrorMagnitude = Math.sqrt(
-			errorQX * errorQX +
-				errorQY * errorQY +
-				errorQZ * errorQZ +
-				errorQW * errorQW
-		);
+		// Log significant errors (helps with debugging)
+		if (errorMagnitude > 0.1) {
+			console.log(`Position error: ${errorMagnitude.toFixed(3)} units`);
+		}
 
-		const POSITION_ERROR_THRESHOLD = 0.001; // Adjust based on your game scale
-		const ROTATION_ERROR_THRESHOLD = 0.001; // Adjust based on sensitivity needs
+		// Blend server and client states rather than completely replacing
+		// This preserves any client data not sent by the server
+		let state = new PlayerState();
+		state = {
+			...this[index - 1], // Keep client-side data
+			x: serverState.x, // Update position from server
+			y: serverState.y,
+			z: serverState.z,
+			qx: serverState.qx, // Update rotation from server
+			qy: serverState.qy,
+			qz: serverState.qz,
+			qw: serverState.qw,
+			timestamp: serverState.timestamp,
+		};
 
-		const needsPositionReconciliation =
-			positionErrorMagnitude > POSITION_ERROR_THRESHOLD;
-		const needsRotationReconciliation =
-			rotationErrorMagnitude > ROTATION_ERROR_THRESHOLD;
+		this[index - 1] = state;
+		console.log(state);
 
-		if (needsPositionReconciliation || needsRotationReconciliation) {
-			// Apply corrections to all states after the reconciliation point
-			for (let i = index - 1; i < this.length; i++) {
-				// Apply position corrections
+		// Store the dx/dz values that were used during each buffered state
+		const originalInputs = this.map((state) => ({
+			dx: state.dx,
+			dz: state.dz,
+			timestamp: state.timestamp,
+		}));
 
-				// Apply rotation corrections
-				if (needsRotationReconciliation) {
-					this[i].qx += errorQX * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
-					this[i].qy += errorQY * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
-					this[i].qz += errorQZ * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
-					this[i].qw += errorQW * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
+		// Recalculate future states based on the server-corrected state
+		for (let i = index; i < this.length; i++) {
+			const deltaMs = Number(this[i].timestamp) - Number(this[i - 1].timestamp);
 
-					// Normalize quaternion to ensure it remains valid
-					const length = Math.sqrt(
-						this[i].qx * this[i].qx +
-							this[i].qy * this[i].qy +
-							this[i].qz * this[i].qz +
-							this[i].qw * this[i].qw
-					);
+			// Create quaternion from previous state
+			const quat = new THREE.Quaternion(
+				this[i - 1].qx,
+				this[i - 1].qy,
+				this[i - 1].qz,
+				this[i - 1].qw
+			);
 
-					if (length > 0) {
-						this[i].qx /= length;
-						this[i].qy /= length;
-						this[i].qz /= length;
-						this[i].qw /= length;
-					}
-				}
+			// Use the original inputs for this timestamp
+			const originalInput = originalInputs.find(
+				(input) => input.timestamp === this[i - 1].timestamp
+			);
 
-				if (needsPositionReconciliation) {
-					this[i].x += errorX * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
-					this[i].y += errorY * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
-					this[i].z += errorZ * CONFIG.RECONCILIATION.POSITION_LERP_FACTOR;
-				}
-			}
+			const dx = originalInput ? originalInput.dx : this[i - 1].dx;
+			const dz = originalInput ? originalInput.dz : this[i - 1].dz;
 
-			// Keep a few older states for interpolation if needed
-			const statesToKeep = 3;
-			const statesToRemove = Math.max(0, index - 1 - statesToKeep);
+			// Apply rotation using shared logic
+			updateRotation(deltaMs, dx, dz, quat);
 
-			if (statesToRemove > 0) {
-				this.splice(0, statesToRemove);
-			} else {
-				// Just remove one old state if we can't remove the full amount
-				if (this.length > this.maxBufferLength - 10) {
-					this.shift();
-				}
-			}
+			// Update rotation
+			this[i].qw = quat.w;
+			this[i].qx = quat.x;
+			this[i].qy = quat.y;
+			this[i].qz = quat.z;
 
-			// Debug output for significant corrections
-			if (this.player.isSelf && positionErrorMagnitude > 0.1) {
-				console.log(
-					`Large reconciliation: ${positionErrorMagnitude.toFixed(3)} units`
-				);
-			}
+			// Use shared movement logic for consistency
+			const forwardVector = getForwardMovement(
+				deltaMs,
+				quat,
+				CONFIG.GAMEPLAY.START_SPEED
+			);
 
-			if (this.player.isSelf && rotationErrorMagnitude > 0.1) {
-				console.log(
-					`Large reconciliation: ${rotationErrorMagnitude.toFixed(3)} units`
-				);
+			// Update position
+			this[i].x = this[i - 1].x + forwardVector.x;
+			this[i].y = this[i - 1].y + forwardVector.y;
+			this[i].z = this[i - 1].z + forwardVector.z;
+
+			// Restore the original input directions
+			if (originalInput) {
+				this[i].dx = originalInput.dx;
+				this[i].dz = originalInput.dz;
 			}
 		}
+
+		// Remove older states after reconciliation completes
+		// (outside the loop to avoid modifying while iterating)
+		this.splice(0, index - 1);
 	}
 
 	public getLatestState(): PlayerState {

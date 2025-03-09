@@ -24,8 +24,7 @@ export default class Player {
 		readonly playerManager: PlayerManager,
 		readonly isSelf = false
 	) {
-		this.buffer = new StateBuffer(this, serverState);
-
+		this.buffer = new StateBuffer(this);
 		this.spaceShip = new Spaceship(app.currentScene, this);
 
 		// set spawn
@@ -91,7 +90,7 @@ export default class Player {
 
 	public getCurrentState(): PlayerState {
 		const state = new PlayerState();
-		state.timestamp = Date.now().toString();
+		state.timestamp = Date.now();
 
 		state.dx = this.direction.x;
 		state.dz = this.direction.z;
