@@ -33,22 +33,22 @@ export default class App {
 	readonly debug: boolean = false;
 
 	constructor() {
-		run();
-		// this.debug = process.env.DEBUG === 'true';
-		// this.timer = new Timer();
-		// this.client = new ConnectionManager(this);
-		// this.controls = new ControlsManager(this);
-		// this.camera = new CameraManager(this);
-		// this.renderer = new RenderManager(this);
-		// this.currentScene = new GameScene(this);
-		// this.scale = new ScaleManager(this);
-		// this.ui = new UiManager(this);
-		// this.playerManager = new PlayerManager(this);
-		// this.renderer.setupRenderPasses();
-		// // this.setupVisibilityChangeListener();
-		// this.client.init();
-		// requestAnimationFrame(this.animate.bind(this));
-		// if (this.debug) this.debugger = new DebugManager(this);
+		// run();
+		this.debug = process.env.DEBUG === 'true';
+		this.timer = new Timer();
+		this.client = new ConnectionManager(this);
+		this.controls = new ControlsManager(this);
+		this.camera = new CameraManager(this);
+		this.renderer = new RenderManager(this);
+		this.currentScene = new GameScene(this);
+		this.scale = new ScaleManager(this);
+		this.ui = new UiManager(this);
+		this.playerManager = new PlayerManager(this);
+		this.renderer.setupRenderPasses();
+		// this.setupVisibilityChangeListener();
+		this.client.init();
+		requestAnimationFrame(this.animate.bind(this));
+		if (this.debug) this.debugger = new DebugManager(this);
 	}
 
 	private animate(timestamp: number) {

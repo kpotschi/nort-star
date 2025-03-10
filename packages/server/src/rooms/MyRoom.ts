@@ -26,44 +26,67 @@ export class GameRoom extends Room<State> {
 	onCreate() {
 		console.log('creating room ', this.roomId);
 
-		this.onMessage('move', (client, data: PlayerState) => {
-			const player = this.state.players.get(client.sessionId);
+		this.onMessage(
+			'move',
+			(
+				client,
+				data: {
+					previousState: PlayerState;
+					currentState: PlayerState;
+				}
+			) => {
+				const player = this.state.players.get(client.sessionId);
+				const { previousState, currentState } = data;
+				if (player) {
+					// old states
+					const rotation = new THREE.Euler(player.u, player.v, player.w);
+					const direction = new THREE.Vector3(player.dx, player.dy, 0);
+					const position = new THREE.Vector3(player.x, player.y, player.z);
 
-			if (player) {
-				const deltaMs = Number(data.timestamp) - Number(player.timestamp);
+					// split into previous and current buffer calculation
 
-				// Store the received direction from client
-				player.dx = data.dx;
-				player.dz = data.dz;
+					// const deltaMsToPrevious =
+					// 	Number(previousState.timestamp) - Number(player.timestamp);
 
-				const currentQuat = new THREE.Quaternion(
-					player.qx,
-					player.qy,
-					player.qz,
-					player.qw
-				);
+					// updateRotation(deltaMsToPrevious, direction, rotation);
 
-				updateRotation(deltaMs, data.dx, data.dz, currentQuat);
+					// const deltaMsPreviousToCurrent =
+					// 	Number(currentState.timestamp) - Number(previousState.timestamp);
 
-				const position = new THREE.Vector3(player.x, player.y, player.z);
+					// direction.x = currentState.dx;
+					// direction.y = currentState.dy;
 
-				getForwardMovement(deltaMs, currentQuat, position);
+					// updateRotation(deltaMsPreviousToCurrent, direction, rotation);
 
-				// update rotation
-				player.qw = currentQuat.w;
-				player.qx = currentQuat.x;
-				player.qy = currentQuat.y;
-				player.qz = currentQuat.z;
+					const deltaMs =
+						Number(currentState.timestamp) - Number(player.timestamp);
 
-				// Update position
-				player.x = position.x;
-				player.y = position.y;
-				player.z = position.z;
+					// direction.x = currentState.dx;
+					// direction.y = currentState.dy;
 
-				// Update timestamp
-				player.timestamp = data.timestamp;
+					updateRotation(deltaMs, direction, rotation);
+
+					getForwardMovement(deltaMs, rotation, position);
+
+					// Store the received direction from client
+					player.dx = currentState.dx;
+					player.dy = currentState.dy;
+
+					// update rotation
+					player.u = rotation.x;
+					player.v = rotation.y;
+					player.w = rotation.z;
+
+					// Update position
+					player.x = position.x;
+					player.y = position.y;
+					player.z = position.z;
+
+					// Update timestamp
+					player.timestamp = currentState.timestamp;
+				}
 			}
-		});
+		);
 
 		// Server-side game loop
 		// this.setSimulationInterval(
@@ -85,13 +108,11 @@ export class GameRoom extends Room<State> {
 		newPlayer.y = spawnPosition.y;
 		newPlayer.z = spawnPosition.z;
 		newPlayer.dx = 0;
-		newPlayer.dz = 0;
+		newPlayer.dy = 0;
 
-		// Initialize quaternion to identity (no rotation)
-		newPlayer.qw = 1;
-		newPlayer.qx = 0;
-		newPlayer.qy = 0;
-		newPlayer.qz = 0;
+		newPlayer.u = 0;
+		newPlayer.v = 0;
+		newPlayer.w = 0;
 
 		newPlayer.timestamp = Date.now();
 

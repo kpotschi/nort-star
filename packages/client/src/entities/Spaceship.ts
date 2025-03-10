@@ -11,11 +11,14 @@ export default class Spaceship extends THREE.Mesh {
 	readonly playerManager: PlayerManager;
 	readonly player: Player;
 	private currentSpeed: number;
+	private helper: THREE.AxesHelper;
 
 	constructor(scene: GameScene, player: Player) {
 		const material = Spaceship.getMaterial();
 		const geometry = Spaceship.getGeometry();
 		super(geometry, material);
+		this.helper = new THREE.AxesHelper(3);
+		this.add(this.helper);
 		this.player = player;
 		this.currentSpeed = CONFIG.GAMEPLAY.START_SPEED;
 		this.scene = scene;
@@ -113,7 +116,7 @@ export default class Spaceship extends THREE.Mesh {
 		const state = this.player.buffer.getLatestState();
 
 		if (state) {
-			this.quaternion.set(state.qx, state.qy, state.qz, state.qw);
+			this.rotation.set(state.u, state.v, state.w);
 			this.position.set(state.x, state.y, state.z);
 		}
 	}

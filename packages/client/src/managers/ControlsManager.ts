@@ -14,8 +14,7 @@ export default class ControlsManager {
 				set: (target, key: string, value: boolean) => {
 					if (target[key] !== value) {
 						target[key] = value;
-						if (this.app.playerManager.self) this.app.client.sendServerUpdate();
-						// Only update when the key state changes
+						this.app.client.queueServerUpdate(); // Only update when the key state changes
 					}
 					return true;
 				},
@@ -28,18 +27,12 @@ export default class ControlsManager {
 	private addKeyEvents() {
 		window.addEventListener('keydown', (event) => {
 			const key = event.key.toLowerCase();
-			if (!this.keysPressed[key]) {
-				// Only update if the key wasn't already pressed
-				this.keysPressed[key] = true;
-			}
+			if (!this.keysPressed[key]) this.keysPressed[key] = true;
 		});
 
 		window.addEventListener('keyup', (event) => {
 			const key = event.key.toLowerCase();
-			if (this.keysPressed[key]) {
-				// Only update if the key was pressed before
-				this.keysPressed[key] = false;
-			}
+			if (this.keysPressed[key]) this.keysPressed[key] = false;
 		});
 	}
 }

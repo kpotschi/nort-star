@@ -13,6 +13,7 @@ export default class ConnectionManager extends Client {
 	public listenToServerUpdates: boolean = true;
 	readonly sendRate: number = CONFIG.RECONCILIATION.HEARTBEAT_MS;
 	private lastHeartBeatTime: number = 0;
+	private serverUpdateQueued: boolean = false;
 
 	constructor(app: App) {
 		super('http://192.168.178.29:2567');
@@ -40,15 +41,24 @@ export default class ConnectionManager extends Client {
 		const currentTime = Date.now();
 
 		if (currentTime - this.lastHeartBeatTime > this.sendRate) {
-			this.sendServerUpdate();
-
+			this.queueServerUpdate();
 			this.lastHeartBeatTime = currentTime; // Update last send time
 		}
 	}
 
-	public sendServerUpdate() {
-		const currentState = this.app?.playerManager?.self?.getCurrentState();
+	public queueServerUpdate() {
+		this.serverUpdateQueued = true;
+	}
 
-		if (currentState) this.room?.send<PlayerState>('move', currentState);
+	public sendServerUpdate() {
+		if (this.serverUpdateQueued) {
+			const currentState = this.app.playerManager.self.buffer.getLatestState();
+			const previousState =
+				this.app.playerManager.self.buffer.getPreviousState();
+			this.room?.send<{
+				previousState: PlayerState;
+				currentState: PlayerState;
+			}>('move', { previousState, currentState });
+		}
 	}
 }

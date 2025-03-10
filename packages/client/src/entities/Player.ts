@@ -46,19 +46,14 @@ export default class Player {
 
 		// apply rotation based on input
 
-		updateRotation(
-			deltaMs,
-			this.direction.x,
-			this.direction.z,
-			this.spaceShip.quaternion
-		);
+		updateRotation(deltaMs, this.direction, this.spaceShip.rotation);
 
 		// predict position and change this.position
-		getForwardMovement(
-			deltaMs,
-			this.spaceShip.quaternion,
-			this.spaceShip.position
-		);
+		// getForwardMovement(
+		// 	deltaMs,
+		// 	this.spaceShip.rotation,
+		// 	this.spaceShip.position
+		// );
 
 		const currentState = this.getCurrentState();
 		this.buffer.add(currentState);
@@ -72,19 +67,19 @@ export default class Player {
 		// position only to be set from latest(current) buffer entry
 		this.spaceShip.updateFromBuffer();
 
-		// wrtie latest state to file
+		this.app.client.sendServerUpdate();
 	}
 
 	private updateDirection() {
 		if (this.isSelf) {
 			this.direction.set(0, 0, 0);
-			if (this.app.controls.keysPressed['w'] === true) this.direction.setX(1);
+			if (this.app.controls.keysPressed['w']) this.direction.setX(1);
 
 			if (this.app.controls.keysPressed['s']) this.direction.setX(-1);
 
-			if (this.app.controls.keysPressed['a']) this.direction.setZ(-1);
+			if (this.app.controls.keysPressed['a']) this.direction.setY(-1);
 
-			if (this.app.controls.keysPressed['d']) this.direction.setZ(1);
+			if (this.app.controls.keysPressed['d']) this.direction.setY(1);
 
 			// this.direction.normalize();
 		}
@@ -92,8 +87,8 @@ export default class Player {
 		if (!this.isSelf) {
 			this.direction.set(
 				this.latestServerState.state.dx,
-				0,
-				this.latestServerState.state.dz
+				this.latestServerState.state.dy,
+				0
 			);
 		}
 	}
@@ -103,16 +98,15 @@ export default class Player {
 		state.timestamp = Date.now();
 
 		state.dx = this.direction.x;
-		state.dz = this.direction.z;
+		state.dy = this.direction.y;
 
 		state.x = this.spaceShip.position.x;
 		state.y = this.spaceShip.position.y;
 		state.z = this.spaceShip.position.z;
 
-		state.qw = this.spaceShip.quaternion.w;
-		state.qx = this.spaceShip.quaternion.x;
-		state.qy = this.spaceShip.quaternion.y;
-		state.qz = this.spaceShip.quaternion.z;
+		state.u = this.spaceShip.rotation.x;
+		state.v = this.spaceShip.rotation.y;
+		state.w = this.spaceShip.rotation.z;
 
 		return state;
 	}
