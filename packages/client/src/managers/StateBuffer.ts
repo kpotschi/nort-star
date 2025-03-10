@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {
 	getForwardMovement,
 	updateRotation,
-} from '../../../../shared/config/physics/movement';
+} from '../../../../shared/physics/movement';
 import { PlayerState } from '../../../server/src/rooms/schema/MyRoomState';
 import CONFIG from '../CONFIG_CLIENT';
 import Player from '../entities/Player';
@@ -16,7 +16,6 @@ export default class StateBuffer extends Array<PlayerState> {
 		this.player = player;
 
 		this.maxBufferLength = CONFIG.CLIENT_CONFIG.BUFFER_LENGTH;
-		// this.add(initialState);
 	}
 
 	public add(state: PlayerState) {
@@ -39,12 +38,37 @@ export default class StateBuffer extends Array<PlayerState> {
 		// If we can't find a suitable state to reconcile with, exit
 		if (index === -1 || index === 0) return;
 
+		console.log(
+			'x',
+			this[index - 1].x,
+			serverState.x,
+			'y',
+			this[index - 1].y,
+			serverState.y,
+			'z',
+			this[index - 1].z,
+			serverState.z,
+			'qw',
+			this[index - 1].qw,
+			serverState.qw,
+			'qx',
+			this[index - 1].qx,
+			serverState.qx,
+			'qy',
+			this[index - 1].qy,
+			serverState.qy,
+			'qz',
+			this[index - 1].qz,
+			serverState.qz,
+			'timestamp',
+			this[index - 1].timestamp,
+			serverState.timestamp
+		);
 		// The previous buffered state is the one just before the server timestamp
 		this[index - 1] = serverState;
 
 		for (let i = index; i < this.length; i++) {
 			const deltaMs = Number(this[i].timestamp) - Number(this[i - 1].timestamp);
-			console.log(deltaMs);
 
 			// rotation
 			const quat = new THREE.Quaternion(
@@ -53,20 +77,24 @@ export default class StateBuffer extends Array<PlayerState> {
 				this[i - 1].qz,
 				this[i - 1].qw
 			);
+			const pos = new THREE.Vector3(
+				this[i - 1].x,
+				this[i - 1].y,
+				this[i - 1].z
+			);
 
 			updateRotation(deltaMs, this[i - 1].dx, this[i - 1].dz, quat);
 
-			// position
-			const forwardVector = getForwardMovement(deltaMs, quat);
+			getForwardMovement(deltaMs, quat, pos);
 
-			this[i].qw = quat.w;
-			this[i].qx = quat.x;
-			this[i].qy = quat.y;
-			this[i].qz = quat.z;
+			// this[i].qw = quat.w;
+			// this[i].qx = quat.x;
+			// this[i].qy = quat.y;
+			// this[i].qz = quat.z;
 
-			this[i].x = this[i - 1].x + forwardVector.x;
-			this[i].y = this[i - 1].y + forwardVector.y;
-			this[i].z = this[i - 1].z + forwardVector.z;
+			this[i].x = pos.x;
+			this[i].y = pos.y;
+			this[i].z = pos.z;
 		}
 		this.splice(0, index - 1);
 	}

@@ -5,8 +5,9 @@ import CONFIG from '../../CONFIG_SERVER';
 import {
 	getForwardMovement,
 	updateRotation,
-} from './../../../../shared/config/physics/movement';
+} from './../../../../shared/physics/movement';
 import { PlayerState, State } from './schema/MyRoomState';
+import * as fs from 'fs'; // Add this import
 
 interface MyUserData {
 	username: string;
@@ -30,7 +31,6 @@ export class GameRoom extends Room<State> {
 
 			if (player) {
 				const deltaMs = Number(data.timestamp) - Number(player.timestamp);
-				console.log(deltaMs);
 
 				// Store the received direction from client
 				player.dx = data.dx;
@@ -45,18 +45,20 @@ export class GameRoom extends Room<State> {
 
 				updateRotation(deltaMs, data.dx, data.dz, currentQuat);
 
+				const position = new THREE.Vector3(player.x, player.y, player.z);
+
+				getForwardMovement(deltaMs, currentQuat, position);
+
 				// update rotation
 				player.qw = currentQuat.w;
 				player.qx = currentQuat.x;
 				player.qy = currentQuat.y;
 				player.qz = currentQuat.z;
 
-				const forwardVector = getForwardMovement(deltaMs, currentQuat);
-
 				// Update position
-				player.x += forwardVector.x;
-				player.y += forwardVector.y;
-				player.z += forwardVector.z;
+				player.x = position.x;
+				player.y = position.y;
+				player.z = position.z;
 
 				// Update timestamp
 				player.timestamp = data.timestamp;
@@ -103,12 +105,5 @@ export class GameRoom extends Room<State> {
 	onLeave(client: Client, consented: boolean) {
 		console.log(client.sessionId + ' left');
 		this.state.players.delete(client.sessionId);
-	}
-
-	private updateLoop(deltaMs: number) {
-		this.state.players.forEach((player: PlayerState) => {
-			// You can add additional server-side updates here if needed
-			// For example, collision detection or game mechanics
-		});
 	}
 }

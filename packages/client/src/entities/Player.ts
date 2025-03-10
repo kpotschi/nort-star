@@ -4,7 +4,10 @@ import PlayerManager from '../managers/PlayerManager';
 import StateBuffer from '../managers/StateBuffer';
 import { PlayerState } from './../../../server/src/rooms/schema/MyRoomState';
 import Spaceship from './Spaceship';
-import { updateRotation } from '../../../../shared/config/physics/movement';
+import {
+	getForwardMovement,
+	updateRotation,
+} from '../../../../shared/physics/movement';
 
 export default class Player {
 	public spaceShip: Spaceship;
@@ -51,7 +54,11 @@ export default class Player {
 		);
 
 		// predict position and change this.position
-		this.spaceShip.updatePosition(deltaMs);
+		getForwardMovement(
+			deltaMs,
+			this.spaceShip.quaternion,
+			this.spaceShip.position
+		);
 
 		const currentState = this.getCurrentState();
 		this.buffer.add(currentState);
@@ -61,8 +68,11 @@ export default class Player {
 			this.buffer.reconcile(this.latestServerState.state);
 			this.latestServerState.wasConsumed = true;
 		}
+
 		// position only to be set from latest(current) buffer entry
 		this.spaceShip.updateFromBuffer();
+
+		// wrtie latest state to file
 	}
 
 	private updateDirection() {

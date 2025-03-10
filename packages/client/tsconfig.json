@@ -8,5 +8,5 @@
 		"forceConsistentCasingInFileNames": true,
 		"strictNullChecks": false
 	},
-	"include": ["src/**/*", "../../shared/config"]
+	"include": ["src/**/*", "../../shared/config", "../../shared/logs.ts"]
 }

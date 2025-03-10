@@ -1,11 +1,7 @@
 import { Room } from 'colyseus.js';
 import * as THREE from 'three';
-import {
-	PlayerState,
-	State,
-} from '../../../server/src/rooms/schema/MyRoomState';
+import { State } from '../../../server/src/rooms/schema/MyRoomState';
 import App from '../app';
-import CONFIG from '../CONFIG_CLIENT';
 import BackgroundStars from '../entities/BackgroundStars';
 import Obstacle from '../entities/obstacles/Obstacle';
 import Sun from '../entities/Sun';

@@ -3,7 +3,7 @@ import CONFIG from '../CONFIG_CLIENT';
 import PlayerManager from '../managers/PlayerManager';
 import GameScene from '../scenes/GameScene';
 import Player from './Player';
-import { getForwardMovement } from '../../../../shared/config/physics/movement';
+import { getForwardMovement } from '../../../../shared/physics/movement';
 
 export default class Spaceship extends THREE.Mesh {
 	declare material: THREE.MeshStandardMaterial;
@@ -107,16 +107,7 @@ export default class Spaceship extends THREE.Mesh {
 		this.material.color = new THREE.Color(color);
 	}
 
-	public updatePosition(deltaMs: number): void {
-		const forwardVector = getForwardMovement(
-			deltaMs,
-			this.quaternion,
-			this.currentSpeed
-		);
-
-		// Add the movement to the current position
-		this.position.add(forwardVector);
-	}
+	public updatePosition(deltaMs: number): void {}
 
 	public updateFromBuffer() {
 		const state = this.player.buffer.getLatestState();
